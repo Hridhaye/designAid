@@ -1657,24 +1657,21 @@ function buildIndentedText(node, depth = 0, out = []) {
 
 document.getElementById('btnPrintText').addEventListener('click', () => {
     const lines = buildIndentedText(root).join('\n');
-    const header = 'Schema: two-space indent per level';
+    const header = 'Indent indicates parent-child relationship. Same indent indicates sibling relationship.';
     const content = header + '\n\n' + lines;
 
-    const w = window.open('', '_blank', 'noopener');
-    if (!w) {
-        alert('Popup blocked — copy manually:\n\n' + content);
-        return;
+    // Paste into import textarea and open the import pane, then trigger validation
+    importInput.value = content;
+    if (!importBody.classList.contains('open')) {
+        importBody.classList.add('open');
+        importArrow.classList.add('open');
     }
-    w.document.title = 'Organization Text';
-    const btn = w.document.createElement('button');
-    btn.textContent = 'Print';
-    btn.style.position = 'fixed'; btn.style.top = '8px'; btn.style.right = '8px'; btn.style.padding = '8px 12px';
-    btn.addEventListener('click', () => w.print());
-    const pre = w.document.createElement('pre');
-    pre.style.whiteSpace = 'pre-wrap'; pre.style.fontFamily = 'monospace'; pre.style.padding = '16px';
-    pre.textContent = content;
-    w.document.body.appendChild(btn);
-    w.document.body.appendChild(pre);
+    importInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Temporary button feedback
+    const b = document.getElementById('btnPrintText');
+    const prev = b.textContent; b.textContent = 'Inserted ✓';
+    setTimeout(() => b.textContent = prev, 1500);
 });
 
 /* ── Import from indented text ── */
