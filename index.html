@@ -33,7 +33,6 @@ html, body {
     font-family: var(--mono); font-size: 14px; overflow: hidden;
 }
 
-/* ── Shell ── */
 .shell { display: flex; flex-direction: column; height: 100vh; }
 
 .header {
@@ -52,7 +51,6 @@ html, body {
 
 .header-hint { font-size: 11px; color: var(--dim); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* panel toggle button */
 .btn-toggle-panel {
     flex-shrink: 0; background: none; border: 1px solid var(--border2);
     color: var(--muted); font-family: var(--mono); font-size: 18px; line-height: 1;
@@ -62,13 +60,10 @@ html, body {
 }
 .btn-toggle-panel:hover { color: var(--accent); border-color: var(--accent2); }
 
-/* ── Body ── */
 .body {
     flex: 1; display: flex; overflow: hidden;
-    transition: none;
 }
 
-/* ── Panel ── */
 .panel {
     flex-shrink: 0; width: var(--panel-w);
     background: var(--panel); border-right: 1px solid var(--border);
@@ -102,7 +97,6 @@ html, body {
 }
 .panel-head-btn:hover { color: var(--accent); border-color: var(--accent2); }
 
-/* ── Tree scroll ── */
 .tree-scroll {
     flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 60px;
     -webkit-overflow-scrolling: touch;
@@ -110,7 +104,6 @@ html, body {
 .tree-scroll::-webkit-scrollbar { width: 3px; }
 .tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* ── Node row ── */
 .tree-row {
     display: flex; align-items: center;
     min-height: 34px;
@@ -119,7 +112,6 @@ html, body {
 .tree-row:hover { background: var(--hover); }
 .tree-row.selected { background: var(--sel); }
 
-/* guide lines */
 .vline { flex-shrink: 0; width: 16px; height: 34px; position: relative; }
 .vline.continues::before {
     content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
@@ -137,7 +129,6 @@ html, body {
 }
 .connector.not-last::before { height: 34px; }
 
-/* collapse toggle */
 .toggle {
     flex-shrink: 0; width: 14px; height: 14px; border: 1px solid var(--border2);
     color: var(--text); font-size: 8px; display: flex; align-items: center;
@@ -147,10 +138,8 @@ html, body {
 .toggle:hover { border-color: var(--accent2); color: var(--accent); }
 .toggle.leaf { border-color: transparent; color: var(--muted); cursor: default; }
 
-/* sign dot */
 .sign-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-right: 5px; }
 
-/* label */
 .node-label {
     flex: 1; min-width: 0; font-size: 11.5px; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -158,7 +147,6 @@ html, body {
 }
 .node-label.root-lbl { color: var(--accent); font-weight: 700; }
 
-/* rename input */
 .node-input {
     flex: 1; min-width: 0; background: rgba(0,0,0,0.35); border: none;
     border-bottom: 1px solid var(--accent2); color: var(--text);
@@ -166,7 +154,6 @@ html, body {
     outline: none; letter-spacing: 0.01em; height: 26px;
 }
 
-/* action buttons — float as an overlay on the right so they don't eat label space */
 .row-actions {
     display: flex; gap: 0; flex-shrink: 0;
     position: absolute; right: 0; top: 0; bottom: 0;
@@ -178,7 +165,6 @@ html, body {
 .tree-row:hover .row-actions,
 .tree-row.selected .row-actions { opacity: 1; pointer-events: all; }
 
-/* on touch, always show */
 @media (hover: none) {
     .row-actions { opacity: 1; pointer-events: all; }
 }
@@ -195,13 +181,11 @@ html, body {
 .row-btn.del:hover,
 .row-btn.del:active { color: #d07070; background: rgba(208,112,112,0.1); }
 
-/* reorder arrows — subtle */
 .row-btn.reorder { font-size: 11px; color: var(--dim); }
 .row-btn.reorder:hover,
 .row-btn.reorder:active { color: var(--accent); background: rgba(212,168,76,0.1); }
 .row-btn.reorder.disabled { opacity: 0; pointer-events: none; }
 
-/* ── Legend ── */
 .legend {
     flex-shrink: 0; padding: 7px 14px;
     border-top: 1px solid var(--border);
@@ -211,7 +195,6 @@ html, body {
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text); }
 .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
 
-/* ── Footer ── */
 .panel-foot {
     flex-shrink: 0; padding: 8px 14px;
     border-top: 1px solid var(--border);
@@ -228,7 +211,6 @@ html, body {
 }
 .btn-export:hover { border-color: var(--accent); background: rgba(212,168,76,0.07); }
 
-/* ── Save button + indicator ── */
 .btn-save {
     flex-shrink: 0; background: none; border: 1px solid var(--accent2);
     color: var(--accent); font-family: var(--head); font-size: 10px;
@@ -246,7 +228,6 @@ html, body {
 }
 .save-indicator.visible { opacity: 1; }
 
-/* ── Import section ── */
 .import-section {
     flex-shrink: 0;
     border-top: 1px solid var(--border);
@@ -302,7 +283,6 @@ html, body {
 }
 .btn-import:disabled { opacity: 0.35; cursor: default; }
 
-/* ── Preview ── */
 .preview { flex: 1; background: #eef3fb; position: relative; overflow: hidden; min-width: 0; }
 iframe { width: 100%; height: 100%; border: none; display: block; }
 
@@ -342,10 +322,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     }
 
     .preview { min-height: 0; }
-
-    /* hide keyboard hints on mobile */
     .kb-bar { display: none; }
-
     .header-hint { display: none; }
 }
 
@@ -550,7 +527,6 @@ function renderNode(node, parentBits, isLast) {
         row.appendChild(conn);
     }
 
-    // toggle
     const tog = document.createElement('div');
     tog.className = 'toggle' + (node.children.length === 0 ? ' leaf' : '');
     tog.textContent = node.children.length === 0 ? '·' : (node.collapsed ? '+' : '−');
@@ -560,23 +536,19 @@ function renderNode(node, parentBits, isLast) {
     });
     row.appendChild(tog);
 
-    // dot
     const dot = document.createElement('div');
     dot.className = 'sign-dot';
     dot.style.background = color(node.name);
     row.appendChild(dot);
 
-    // label
     const lbl = document.createElement('div');
     lbl.className = 'node-label' + (depth === 0 ? ' root-lbl' : '');
     lbl.textContent = node.name;
     row.appendChild(lbl);
 
-    // actions
     const acts = document.createElement('div');
     acts.className = 'row-actions';
 
-    // reorder up/down — only for non-root
     if (depth > 0) {
         const parent = findParent(node.id);
         const idx = parent ? parent.children.findIndex(c => c.id === node.id) : -1;
@@ -716,12 +688,9 @@ document.addEventListener('keydown', e => {
     else if (e.key === ' ') {
         e.preventDefault();
         const node = find(sel);
-        if (node.children.length > 0) {
-            node.collapsed = !node.collapsed;
-            render();
-        }
+        if (node.children.length > 0) { node.collapsed = !node.collapsed; render(); }
     }
-    else if (e.key === 'Delete') { 
+    else if (e.key === 'Delete') {
         const parent = findParent(sel);
         if (parent) { e.preventDefault(); deleteNode(sel); }
     }
@@ -761,8 +730,6 @@ btnToggle.addEventListener('click', () => {
 /* ── Preview ── */
 const previewEl = document.getElementById('preview');
 let debounce = null;
-
-// null = no saved state yet, chart will use its own centerView on first load
 let cameraState = null;
 
 function scheduleUpdate() {
@@ -773,7 +740,6 @@ function scheduleUpdate() {
     }, 300);
 }
 
-// Receive camera state updates from the iframe via postMessage
 window.addEventListener('message', e => {
     if (e.data && e.data.type === 'cam') {
         cameraState = e.data.cam;
@@ -820,128 +786,171 @@ const sc2=n=>n==="Founding Father"?"Founding":n.split(" ")[0];
 function rN(){nl.innerHTML="";for(const nm of an){const d=document.createElement("div");d.className="node "+sc2(nm);d.textContent=nm;d.style.left=xOf(nm)+"px";d.style.top=yOf(nm)+"px";nl.appendChild(d);}}
 function rE(){sv.innerHTML="";const gm=new Map();for(const[p,c]of R){if(!gm.has(p))gm.set(p,[]);gm.get(p).push(c);}for(const[par,kids]of gm){const px=xOf(par),pb=yOf(par)+C.nH,by=pb+C.bG,xs=kids.map(xOf),mn=Math.min(...xs),mx2=Math.max(...xs);const g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("stroke","rgba(70,70,70,.9)");g.setAttribute("stroke-width","2");g.setAttribute("fill","none");const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",kids.length>1?"M "+px+" "+pb+" V "+by+" H "+mn+" H "+mx2:"M "+px+" "+pb+" V "+by+" H "+xs[0]);g.appendChild(t);for(const c of kids){const cx=xOf(c),cy=yOf(c),dd=document.createElementNS("http://www.w3.org/2000/svg","path");dd.setAttribute("d","M "+cx+" "+by+" V "+cy);g.appendChild(dd);}sv.appendChild(g);}}
 rN();rE();
+
+/* ── Camera ── */
 const cam={x:0,y:0,z:1};
 function sendCam(){window.parent.postMessage({type:'cam',cam:{x:cam.x,y:cam.y,zoom:cam.z}},'*');}
-function uc(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";sendCam();}
-if(INIT_CAM){cam.x=INIT_CAM.x;cam.y=INIT_CAM.y;cam.z=INIT_CAM.zoom;uc();}
-else{const r=sc.getBoundingClientRect();cam.z=1;cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;uc();}
+function applyTransform(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";sendCam();}
+if(INIT_CAM){cam.x=INIT_CAM.x;cam.y=INIT_CAM.y;cam.z=INIT_CAM.zoom;applyTransform();}
+else{const r=sc.getBoundingClientRect();cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;applyTransform();}
 
-/* ── Momentum pan ── */
+/* ────────────────────────────────────────────────
+   UNIFIED POINTER-EVENT GESTURE SYSTEM
+   Handles mouse, touch, and stylus with one code path.
+   No mixed pointer+touch listeners — prevents double-firing on mobile.
+
+   Pan   : 1 active pointer — drag to pan, release with velocity → momentum
+   Pinch : 2 active pointers — pinch to zoom, anchored to midpoint at gesture START
+   Wheel : mouse wheel / trackpad scroll → zoom toward cursor
+   ──────────────────────────────────────────────── */
+
+/* Active pointer registry — keyed by pointerId */
+const ptrs = new Map(); /* id → {x, y} current position */
+
+/* Momentum state */
 let vx=0,vy=0,rafId=null;
-const FRICTION=0.88;
-function tick(){
+const FRICTION=0.82, VEL_MIN=0.4, VEL_MAX=22;
+
+function momentumTick(){
   vx*=FRICTION; vy*=FRICTION;
-  if(Math.abs(vx)<0.2&&Math.abs(vy)<0.2){rafId=null;sendCam();return;}
-  cam.x+=vx; cam.y+=vy; uc();
-  rafId=requestAnimationFrame(tick);
+  if(Math.abs(vx)<VEL_MIN&&Math.abs(vy)<VEL_MIN){rafId=null;sendCam();return;}
+  cam.x+=vx; cam.y+=vy; applyTransform();
+  rafId=requestAnimationFrame(momentumTick);
 }
 function stopMomentum(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
+function clampVel(){const spd=Math.hypot(vx,vy);if(spd>VEL_MAX){vx=vx/spd*VEL_MAX;vy=vy/spd*VEL_MAX;}}
 
-/* ── Mouse/pointer drag ── */
-let dr=false,dx=0,dy=0,cx=0,cy=0,lx=0,ly=0,lt=0;
-sc.addEventListener("pointerdown",e=>{
-  if(e.button&&e.button!==0)return;
-  stopMomentum(); vx=0; vy=0;
-  dr=true; sc.classList.add("dragging");
-  dx=e.clientX; dy=e.clientY; cx=cam.x; cy=cam.y;
-  lx=e.clientX; ly=e.clientY; lt=performance.now();
-  sc.setPointerCapture(e.pointerId);
-});
-sc.addEventListener("pointermove",e=>{
-  if(!dr)return;
-  const now=performance.now(), dt=now-lt;
-  if(dt>0){vx=(e.clientX-lx)*(1000/dt)*0.15; vy=(e.clientY-ly)*(1000/dt)*0.15;}
-  lx=e.clientX; ly=e.clientY; lt=performance.now();
-  cam.x=cx+(e.clientX-dx); cam.y=cy+(e.clientY-dy); uc();
-});
-function endDrag(){
-  dr=false; sc.classList.remove("dragging");
-  if(Math.abs(vx)>0.5||Math.abs(vy)>0.5) rafId=requestAnimationFrame(tick);
+/* Velocity smoothing — exponential moving average over recent moves */
+let smoothVx=0,smoothVy=0;
+const VEL_ALPHA=0.3; /* weight of newest sample */
+
+/* Pan state snapshot — taken when exactly 1 pointer is active */
+let panAnchorX=0,panAnchorY=0,camAnchorX=0,camAnchorY=0;
+
+/* Pinch state snapshot — taken ONCE when 2nd pointer goes down */
+let pinchActive=false;
+let pinch0d=0,pinch0z=0,pinch0mx=0,pinch0my=0,pinchCam0x=0,pinchCam0y=0;
+const PINCH_DAMPEN=0.65;
+
+function getPinchMidpoint(){
+  const [a,b]=[...ptrs.values()];
+  return {mx:(a.x+b.x)/2, my:(a.y+b.y)/2, d:Math.hypot(a.x-b.x,a.y-b.y)};
 }
-sc.addEventListener("pointerup",endDrag);
-sc.addEventListener("pointercancel",()=>{dr=false;sc.classList.remove("dragging");vx=0;vy=0;});
+
+function snapshotPan(){
+  /* Called whenever we settle to exactly 1 pointer — pick it as anchor */
+  const [p]=[...ptrs.values()];
+  panAnchorX=p.x; panAnchorY=p.y;
+  camAnchorX=cam.x; camAnchorY=cam.y;
+}
+
+function snapshotPinch(){
+  /* Called ONCE when 2nd pointer is added */
+  pinchActive=true;
+  const {mx,my,d}=getPinchMidpoint();
+  const r=sc.getBoundingClientRect();
+  pinch0d=d; pinch0z=cam.z;
+  pinch0mx=mx-r.left; pinch0my=my-r.top;
+  pinchCam0x=cam.x; pinchCam0y=cam.y;
+}
+
+sc.addEventListener("pointerdown",e=>{
+  /* Only track left-button / touch / pen primary */
+  if(e.pointerType==="mouse"&&e.button!==0) return;
+  stopMomentum(); smoothVx=0; smoothVy=0;
+  sc.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+  if(ptrs.size===1){
+    pinchActive=false;
+    snapshotPan();
+    sc.classList.add("dragging");
+  } else if(ptrs.size===2){
+    snapshotPinch();
+  }
+  /* 3+ pointers: ignore extras */
+});
+
+sc.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+  if(ptrs.size===1&&!pinchActive){
+    /* ── Single-finger pan ── */
+    const [p]=[...ptrs.values()];
+    const dx=p.x-panAnchorX, dy=p.y-panAnchorY;
+    /* EMA velocity */
+    smoothVx=smoothVx*(1-VEL_ALPHA)+(p.x-(panAnchorX+(camAnchorX!==cam.x?p.x-panAnchorX:0)))*VEL_ALPHA;
+    /* Simpler: track delta from last frame */
+    const prevX=cam.x-camAnchorX+panAnchorX; /* what we had before */
+    smoothVx=smoothVx*(1-VEL_ALPHA)+(dx-(cam.x-camAnchorX))*VEL_ALPHA;
+    smoothVy=smoothVy*(1-VEL_ALPHA)+(dy-(cam.y-camAnchorY))*VEL_ALPHA;
+    cam.x=camAnchorX+dx; cam.y=camAnchorY+dy;
+    applyTransform();
+
+  } else if(ptrs.size>=2&&pinchActive){
+    /* ── Two-finger pinch+pan ── */
+    const {mx,my,d}=getPinchMidpoint();
+    const r=sc.getBoundingClientRect();
+    const curMx=mx-r.left, curMy=my-r.top;
+
+    /* Zoom anchored to the INITIAL midpoint in world space (no per-frame drift) */
+    const rawRatio=d/pinch0d;
+    const ratio=1+(rawRatio-1)*PINCH_DAMPEN;
+    const nz=Math.min(C.maxZ,Math.max(C.minZ,pinch0z*ratio));
+
+    /* World point under the initial pinch midpoint */
+    const wx=(pinch0mx-pinchCam0x)/pinch0z;
+    const wy=(pinch0my-pinchCam0y)/pinch0z;
+
+    /* Also allow the midpoint itself to translate (pan during pinch) */
+    const panDx=curMx-pinch0mx, panDy=curMy-pinch0my;
+
+    cam.z=nz;
+    cam.x=pinch0mx-wx*nz+panDx;
+    cam.y=pinch0my-wy*nz+panDy;
+    applyTransform();
+  }
+});
+
+sc.addEventListener("pointerup",e=>endPointer(e));
+sc.addEventListener("pointercancel",e=>endPointer(e));
+
+function endPointer(e){
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+
+  if(ptrs.size===0){
+    /* All pointers gone — launch momentum if panning */
+    sc.classList.remove("dragging");
+    pinchActive=false;
+    vx=smoothVx; vy=smoothVy; clampVel();
+    if(Math.abs(vx)>VEL_MIN||Math.abs(vy)>VEL_MIN) rafId=requestAnimationFrame(momentumTick);
+    else{vx=0;vy=0;}
+    smoothVx=0; smoothVy=0;
+
+  } else if(ptrs.size===1){
+    /* One finger left after pinch — restart pan cleanly from current position */
+    pinchActive=false;
+    smoothVx=0; smoothVy=0;
+    snapshotPan();
+  }
+  /* If 2+ remain, the pinch snapshot is already set — do nothing */
+}
 
 /* ── Mouse wheel zoom ── */
 sc.addEventListener("wheel",e=>{
   e.preventDefault();
   stopMomentum();
-  const r=sc.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-  const oz=cam.z,d=e.deltaY,tp=Math.abs(d)<40||d%1!==0;
-  const zf=tp?Math.exp(-Math.max(-20,Math.min(20,d))*.004):(d>0?0.85:1.18);
+  const r=sc.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  const oz=cam.z;
+  const isTrackpad=Math.abs(e.deltaY)<40||e.deltaMode===0&&e.deltaY%1!==0;
+  const zf=isTrackpad?Math.exp(-Math.max(-20,Math.min(20,e.deltaY))*0.002):(e.deltaY>0?0.93:1.075);
   const nz=Math.min(C.maxZ,Math.max(C.minZ,oz*zf));
-  const wx=(mx-cam.x)/oz,wy=(my-cam.y)/oz;
-  cam.z=nz; cam.x=mx-wx*nz; cam.y=my-wy*nz; uc();
+  const wx=(mx-cam.x)/oz, wy=(my-cam.y)/oz;
+  cam.z=nz; cam.x=mx-wx*nz; cam.y=my-wy*nz; applyTransform();
 },{passive:false});
 
-/* ── Touch: one-finger pan + momentum, two-finger pinch ── */
-function ptDist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
-let t1=null,t2=null;
-let tp0x=0,tp0y=0,tc0x=0,tc0y=0; // pan start
-let pinch0d=0,pinch0z=0,pinch0cx=0,pinch0cy=0; // pinch start
-let tlx=0,tly=0,tlt=0; // for momentum
-let tvx=0,tvy=0;
-
-sc.addEventListener("touchstart",e=>{
-  e.preventDefault(); stopMomentum(); tvx=0; tvy=0;
-  const tl=[...e.touches];
-  if(tl.length===1){
-    t1=tl[0]; t2=null;
-    tp0x=t1.clientX; tp0y=t1.clientY;
-    tc0x=cam.x; tc0y=cam.y;
-    tlx=t1.clientX; tly=t1.clientY; tlt=performance.now();
-  } else if(tl.length>=2){
-    t1=tl[0]; t2=tl[1];
-    pinch0d=ptDist(t1,t2);
-    pinch0z=cam.z;
-    pinch0cx=(t1.clientX+t2.clientX)/2;
-    pinch0cy=(t1.clientY+t2.clientY)/2;
-    tc0x=cam.x; tc0y=cam.y;
-  }
-},{passive:false});
-
-sc.addEventListener("touchmove",e=>{
-  e.preventDefault();
-  const tl=[...e.touches];
-  if(tl.length===1&&t2===null){
-    const t=tl[0];
-    const now=performance.now(),dt=now-tlt;
-    if(dt>0){tvx=(t.clientX-tlx)*(1000/dt)*0.15; tvy=(t.clientY-tly)*(1000/dt)*0.15;}
-    tlx=t.clientX; tly=t.clientY; tlt=performance.now();
-    cam.x=tc0x+(t.clientX-tp0x);
-    cam.y=tc0y+(t.clientY-tp0y);
-    uc();
-  } else if(tl.length>=2){
-    const a=tl[0],b=tl[1];
-    const d=ptDist(a,b);
-    const nz=Math.min(C.maxZ,Math.max(C.minZ,pinch0z*(d/pinch0d)));
-    const mcx=(a.clientX+b.clientX)/2, mcy=(a.clientY+b.clientY)/2;
-    const r=sc.getBoundingClientRect();
-    const wx=(pinch0cx-r.left-cam.x)/cam.z, wy=(pinch0cy-r.top-cam.y)/cam.z;
-    cam.z=nz;
-    cam.x=(pinch0cx-r.left)-wx*nz+(mcx-pinch0cx);
-    cam.y=(pinch0cy-r.top)-wy*nz+(mcy-pinch0cy);
-    uc();
-  }
-},{passive:false});
-
-sc.addEventListener("touchend",e=>{
-  e.preventDefault();
-  const tl=[...e.touches];
-  if(tl.length===0){
-    // lift — apply momentum if panning
-    if(t2===null&&(Math.abs(tvx)>0.5||Math.abs(tvy)>0.5)){
-      vx=tvx; vy=tvy; rafId=requestAnimationFrame(tick);
-    }
-    t1=null; t2=null;
-  } else if(tl.length===1){
-    // went from pinch to single finger
-    t2=null; t1=tl[0];
-    tp0x=t1.clientX; tp0y=t1.clientY;
-    tc0x=cam.x; tc0y=cam.y;
-    tlx=t1.clientX; tly=t1.clientY; tlt=performance.now();
-    tvx=0; tvy=0;
-  }
-},{passive:false});
 <\/script></body></html>`;
 }
 
@@ -950,16 +959,10 @@ const SAVE_KEY = 'cult_chart_v1';
 
 function saveToStorage() {
     try {
-        const data = {
-            tree: serializeNode(root),
-            autoMap: { ...autoMap },
-            autoIdx,
-        };
+        const data = { tree: serializeNode(root), autoMap: { ...autoMap }, autoIdx };
         localStorage.setItem(SAVE_KEY, JSON.stringify(data));
         return true;
-    } catch (e) {
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 function loadFromStorage() {
@@ -971,9 +974,7 @@ function loadFromStorage() {
         Object.assign(autoMap, data.autoMap || {});
         autoIdx = data.autoIdx || 0;
         return true;
-    } catch (e) {
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 function serializeNode(n) {
@@ -1005,15 +1006,10 @@ function markSaved() {
     setTimeout(() => saveIndicator.classList.remove('visible'), 2000);
     btnSave.textContent = 'Saved';
     btnSave.classList.add('saved');
-    setTimeout(() => {
-        btnSave.textContent = 'Save';
-        btnSave.classList.remove('saved');
-    }, 2000);
+    setTimeout(() => { btnSave.textContent = 'Save'; btnSave.classList.remove('saved'); }, 2000);
 }
 
-btnSave.addEventListener('click', () => {
-    if (saveToStorage()) markSaved();
-});
+btnSave.addEventListener('click', () => { if (saveToStorage()) markSaved(); });
 
 /* ── Copy array ── */
 document.getElementById('btnCopy').addEventListener('click', () => {
@@ -1043,10 +1039,8 @@ function parseIndented(text) {
     const lines = text.split('\n');
     const pairs = [];
     const stack = [];
-
     for (const raw of lines) {
         if (!raw.trim()) continue;
-
         let indent = 0;
         for (const ch of raw) {
             if (ch === ' ') indent++;
@@ -1056,7 +1050,6 @@ function parseIndented(text) {
         const depth = Math.round(indent / 2);
         const name = raw.trim();
         if (!name) continue;
-
         while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
         if (stack.length > 0) pairs.push([stack[stack.length - 1].name, name]);
         stack.push({ name, depth });
@@ -1108,6 +1101,5 @@ hasUnsaved = false;
 saveIndicator.classList.remove('visible');
 btnSave.textContent = 'Save';
 </script>
-
 </body>
 </html>
