@@ -410,6 +410,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         <span class="save-indicator" id="saveIndicator"></span>
         <button class="btn-save" id="btnSave">Save</button>
         <button class="btn-save" id="btnUndo" disabled>Undo</button>
+        <button class="btn-save" id="btnSyncPull">Pull latest</button>
         <div style="display: flex; align-items: center; gap: 8px; min-width: 140px;">
             <label for="spacingSlider" style="font-family: var(--head); font-size: 9px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;">Space</label>
             <input type="range" id="spacingSlider" min="1.0" max="1.7" step="0.1" value="1.0" style="flex: 1; cursor: pointer; height: 4px; border: none; border-radius: 2px; background: var(--border); outline: none; -webkit-appearance: none; appearance: none;">
@@ -469,7 +470,6 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                     <div class="import-foot">
                         <span class="import-status" id="syncStatus">—</span>
                         <button class="btn-import" id="btnSyncConfig">Save config</button>
-                        <button class="btn-import" id="btnSyncPull">Pull latest</button>
                     </div>
                 </div>
             </div>
