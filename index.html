@@ -316,9 +316,9 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         padding: 10px 16px; font-size: 13px; min-height: 44px;
     }
     .import-toggle-arrow { font-size: 10px; }
-    .row-btn { width: 50px; height: 50px; font-size: 14px; }
-    .row-btn.reorder { width: 56px; }
-    .row-actions { gap: 6px; padding-left: 22px; }
+    .row-btn { width: 42px; height: 42px; font-size: 13px; }
+    .row-btn.reorder { width: 46px; }
+    .row-actions { gap: 4px; padding-left: 18px; }
     .tree-row { padding-right: 10px; }
     .node-label { font-size: 15px; line-height: 40px; }
     .node-input { font-size: 14px; height: 32px; padding: 3px 6px; }
@@ -335,7 +335,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 
     .panel {
         width: 100% !important;
-        height: calc(100dvh - 46px);
+        height: calc(100dvh - 56px);
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
@@ -369,6 +369,32 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     .header-hint {
         display: none;
     }
+}
+
+@media screen and (max-width: 767px) {
+    html, body { font-size: 14px; }
+    .header { height: 50px; padding: 0 12px; }
+    .btn-toggle-panel { width: 34px; height: 30px; font-size: 18px; }
+    .panel-head .panel-head-btn, .btn-save, .btn-export, .btn-import {
+        padding: 5px 8px; font-size: 11px; min-height: 30px;
+    }
+    .import-toggle {
+        padding: 8px 12px; font-size: 11px; min-height: 34px;
+    }
+    .row-btn { width: 26px; height: 32px; font-size: 11px; }
+    .row-btn.reorder { width: 30px; }
+    .row-actions { gap: 0; padding-left: 10px; }
+    .tree-row { min-height: 32px; padding-right: 2px; }
+    .vline, .connector { height: 32px; }
+    .connector::before { height: 16px; }
+    .connector::after { top: 16px; }
+    .connector.not-last::before { height: 32px; }
+    .node-label { font-size: 11px; line-height: 32px; }
+    .toggle { width: 14px; height: 14px; font-size: 8px; margin-right: 4px; }
+    .sign-dot { width: 7px; height: 7px; margin-right: 5px; }
+    .legend-item { font-size: 10px; }
+    .import-textarea { font-size: 11px; line-height: 1.5; }
+    .panel { height: calc(100dvh - 50px); }
 }
 
 </style>
@@ -946,6 +972,14 @@ svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 .node-btn:hover,.node-btn:active{background:rgba(212,168,76,.22);color:#f6d183}
 .node-btn.disabled{opacity:.38;pointer-events:none}
 .node-input{width:100%;min-height:38px;padding:8px 10px;border:2px solid rgba(212,168,76,.92);border-radius:4px;background:#fffaf1;color:#2b2117;font:700 14px/1.15 Arial,sans-serif;text-align:center;outline:none;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+@media (pointer: coarse){
+.node-actions{gap:8px;padding:8px 10px}
+.node-btn{width:36px;height:36px;font-size:15px}
+}
+@media screen and (max-width: 1024px){
+.node-actions{gap:9px;padding:9px 11px}
+.node-btn{width:40px;height:40px;font-size:16px}
+}
 ${colorCSS}
 </style></head><body>
 <div id="scene"><div id="world"><svg id="edges"></svg><div id="nodesLayer"></div></div></div>
