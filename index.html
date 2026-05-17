@@ -202,12 +202,15 @@ html, body {
     overflow: hidden;
     max-height: 1200px;
     opacity: 1;
-    transition: max-height 0.22s ease, opacity 0.18s ease;
+    transform: translateY(0);
+    transform-origin: top;
+    transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
 }
 .bottom-tools.collapsed {
     max-height: 0;
     opacity: 0;
     pointer-events: none;
+    transform: translateY(-8px);
 }
 
 .panel-foot {
