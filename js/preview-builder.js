@@ -25,7 +25,7 @@ import { serializeNode, allColorMap } from './data.js';
 export const CARD = {
   baseWidth:  190,   // px at 1x spacing multiplier
   baseHeight: 100,   // px at 1x
-  baseFontSz: 14,    // px at 1x (scales with spacing multiplier)
+  baseFontSz: 16,    // px at 1x (scales with spacing multiplier)
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
