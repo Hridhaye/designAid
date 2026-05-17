@@ -825,18 +825,123 @@ function sendCam(){window.parent.postMessage({type:'cam',cam:{x:cam.x,y:cam.y,zo
 function uc(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";sendCam();}
 if(INIT_CAM){cam.x=INIT_CAM.x;cam.y=INIT_CAM.y;cam.z=INIT_CAM.zoom;uc();}
 else{const r=sc.getBoundingClientRect();cam.z=1;cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;uc();}
-let dr=false,dx=0,dy=0,cx=0,cy=0;
-sc.addEventListener("pointerdown",e=>{if(e.button&&e.button!==0)return;dr=true;sc.classList.add("dragging");dx=e.clientX;dy=e.clientY;cx=cam.x;cy=cam.y;sc.setPointerCapture(e.pointerId);});
-sc.addEventListener("pointermove",e=>{if(!dr)return;cam.x=cx+(e.clientX-dx);cam.y=cy+(e.clientY-dy);uc();});
-function sd(){dr=false;sc.classList.remove("dragging");}
-sc.addEventListener("pointerup",sd);sc.addEventListener("pointercancel",sd);
-sc.addEventListener("wheel",e=>{e.preventDefault();const r=sc.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,oz=cam.z,d=e.deltaY,tp=Math.abs(d)<40||d%1!==0;const zf=tp?Math.exp(-Math.max(-20,Math.min(20,d))*.004):(d>0?1:1.5);const nz=Math.min(C.maxZ,Math.max(C.minZ,oz*zf)),wx=(mx-cam.x)/oz,wy=(my-cam.y)/oz;cam.z=nz;cam.x=mx-wx*nz;cam.y=my-wy*nz;uc();},{passive:false});
-let p0d=0,p0x=0,p0y=0,p0z=1;
-function ptDist(t){return Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);}
-const touches=new Map();
-sc.addEventListener("touchstart",e=>{e.preventDefault();for(const t of e.changedTouches)touches.set(t.identifier,t);if(touches.size===2){const arr=[...touches.values()];p0d=ptDist(arr);p0x=(arr[0].clientX+arr[1].clientX)/2;p0y=(arr[0].clientY+arr[1].clientY)/2;p0z=cam.z;dr=false;}else if(touches.size===1){const t=[...touches.values()][0];dr=true;dx=t.clientX;dy=t.clientY;cx=cam.x;cy=cam.y;}},{passive:false});
-sc.addEventListener("touchmove",e=>{e.preventDefault();for(const t of e.changedTouches)touches.set(t.identifier,t);if(touches.size===2){const arr=[...touches.values()];const dist=ptDist(arr);const cx2=(arr[0].clientX+arr[1].clientX)/2,cy2=(arr[0].clientY+arr[1].clientY)/2;const nz=Math.min(C.maxZ,Math.max(C.minZ,p0z*(dist/p0d)));const r=sc.getBoundingClientRect();const wx=(p0x-r.left-cam.x)/cam.z,wy=(p0y-r.top-cam.y)/cam.z;cam.z=nz;cam.x=(p0x-r.left)-wx*nz+(cx2-p0x);cam.y=(p0y-r.top)-wy*nz+(cy2-p0y);uc();}else if(touches.size===1&&dr){const t=[...touches.values()][0];cam.x=cx+(t.clientX-dx);cam.y=cy+(t.clientY-dy);uc();}},{passive:false});
-sc.addEventListener("touchend",e=>{for(const t of e.changedTouches)touches.delete(t.identifier);if(touches.size<2)dr=false;if(touches.size===1){const t=[...touches.values()][0];dr=true;dx=t.clientX;dy=t.clientY;cx=cam.x;cy=cam.y;}},{passive:false});
+
+/* ── Momentum pan ── */
+let vx=0,vy=0,rafId=null;
+const FRICTION=0.88;
+function tick(){
+  vx*=FRICTION; vy*=FRICTION;
+  if(Math.abs(vx)<0.2&&Math.abs(vy)<0.2){rafId=null;sendCam();return;}
+  cam.x+=vx; cam.y+=vy; uc();
+  rafId=requestAnimationFrame(tick);
+}
+function stopMomentum(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
+
+/* ── Mouse/pointer drag ── */
+let dr=false,dx=0,dy=0,cx=0,cy=0,lx=0,ly=0,lt=0;
+sc.addEventListener("pointerdown",e=>{
+  if(e.button&&e.button!==0)return;
+  stopMomentum(); vx=0; vy=0;
+  dr=true; sc.classList.add("dragging");
+  dx=e.clientX; dy=e.clientY; cx=cam.x; cy=cam.y;
+  lx=e.clientX; ly=e.clientY; lt=performance.now();
+  sc.setPointerCapture(e.pointerId);
+});
+sc.addEventListener("pointermove",e=>{
+  if(!dr)return;
+  const now=performance.now(), dt=now-lt;
+  if(dt>0){vx=(e.clientX-lx)*(1000/dt)*0.15; vy=(e.clientY-ly)*(1000/dt)*0.15;}
+  lx=e.clientX; ly=e.clientY; lt=performance.now();
+  cam.x=cx+(e.clientX-dx); cam.y=cy+(e.clientY-dy); uc();
+});
+function endDrag(){
+  dr=false; sc.classList.remove("dragging");
+  if(Math.abs(vx)>0.5||Math.abs(vy)>0.5) rafId=requestAnimationFrame(tick);
+}
+sc.addEventListener("pointerup",endDrag);
+sc.addEventListener("pointercancel",()=>{dr=false;sc.classList.remove("dragging");vx=0;vy=0;});
+
+/* ── Mouse wheel zoom ── */
+sc.addEventListener("wheel",e=>{
+  e.preventDefault();
+  stopMomentum();
+  const r=sc.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const oz=cam.z,d=e.deltaY,tp=Math.abs(d)<40||d%1!==0;
+  const zf=tp?Math.exp(-Math.max(-20,Math.min(20,d))*.004):(d>0?0.85:1.18);
+  const nz=Math.min(C.maxZ,Math.max(C.minZ,oz*zf));
+  const wx=(mx-cam.x)/oz,wy=(my-cam.y)/oz;
+  cam.z=nz; cam.x=mx-wx*nz; cam.y=my-wy*nz; uc();
+},{passive:false});
+
+/* ── Touch: one-finger pan + momentum, two-finger pinch ── */
+function ptDist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
+let t1=null,t2=null;
+let tp0x=0,tp0y=0,tc0x=0,tc0y=0; // pan start
+let pinch0d=0,pinch0z=0,pinch0cx=0,pinch0cy=0; // pinch start
+let tlx=0,tly=0,tlt=0; // for momentum
+let tvx=0,tvy=0;
+
+sc.addEventListener("touchstart",e=>{
+  e.preventDefault(); stopMomentum(); tvx=0; tvy=0;
+  const tl=[...e.touches];
+  if(tl.length===1){
+    t1=tl[0]; t2=null;
+    tp0x=t1.clientX; tp0y=t1.clientY;
+    tc0x=cam.x; tc0y=cam.y;
+    tlx=t1.clientX; tly=t1.clientY; tlt=performance.now();
+  } else if(tl.length>=2){
+    t1=tl[0]; t2=tl[1];
+    pinch0d=ptDist(t1,t2);
+    pinch0z=cam.z;
+    pinch0cx=(t1.clientX+t2.clientX)/2;
+    pinch0cy=(t1.clientY+t2.clientY)/2;
+    tc0x=cam.x; tc0y=cam.y;
+  }
+},{passive:false});
+
+sc.addEventListener("touchmove",e=>{
+  e.preventDefault();
+  const tl=[...e.touches];
+  if(tl.length===1&&t2===null){
+    const t=tl[0];
+    const now=performance.now(),dt=now-tlt;
+    if(dt>0){tvx=(t.clientX-tlx)*(1000/dt)*0.15; tvy=(t.clientY-tly)*(1000/dt)*0.15;}
+    tlx=t.clientX; tly=t.clientY; tlt=performance.now();
+    cam.x=tc0x+(t.clientX-tp0x);
+    cam.y=tc0y+(t.clientY-tp0y);
+    uc();
+  } else if(tl.length>=2){
+    const a=tl[0],b=tl[1];
+    const d=ptDist(a,b);
+    const nz=Math.min(C.maxZ,Math.max(C.minZ,pinch0z*(d/pinch0d)));
+    const mcx=(a.clientX+b.clientX)/2, mcy=(a.clientY+b.clientY)/2;
+    const r=sc.getBoundingClientRect();
+    const wx=(pinch0cx-r.left-cam.x)/cam.z, wy=(pinch0cy-r.top-cam.y)/cam.z;
+    cam.z=nz;
+    cam.x=(pinch0cx-r.left)-wx*nz+(mcx-pinch0cx);
+    cam.y=(pinch0cy-r.top)-wy*nz+(mcy-pinch0cy);
+    uc();
+  }
+},{passive:false});
+
+sc.addEventListener("touchend",e=>{
+  e.preventDefault();
+  const tl=[...e.touches];
+  if(tl.length===0){
+    // lift — apply momentum if panning
+    if(t2===null&&(Math.abs(tvx)>0.5||Math.abs(tvy)>0.5)){
+      vx=tvx; vy=tvy; rafId=requestAnimationFrame(tick);
+    }
+    t1=null; t2=null;
+  } else if(tl.length===1){
+    // went from pinch to single finger
+    t2=null; t1=tl[0];
+    tp0x=t1.clientX; tp0y=t1.clientY;
+    tc0x=cam.x; tc0y=cam.y;
+    tlx=t1.clientX; tly=t1.clientY; tlt=performance.now();
+    tvx=0; tvy=0;
+  }
+},{passive:false});
 <\/script></body></html>`;
 }
 
