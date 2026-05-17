@@ -412,7 +412,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         <button class="btn-save" id="btnUndo" disabled>Undo</button>
         <div style="display: flex; align-items: center; gap: 8px; min-width: 140px;">
             <label for="spacingSlider" style="font-family: var(--head); font-size: 9px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;">Space</label>
-            <input type="range" id="spacingSlider" min="0.6" max="2.4" step="0.1" value="1.0" style="flex: 1; cursor: pointer; height: 4px; border: none; border-radius: 2px; background: var(--border); outline: none; -webkit-appearance: none; appearance: none;">
+            <input type="range" id="spacingSlider" min="1.0" max="1.7" step="0.1" value="1.0" style="flex: 1; cursor: pointer; height: 4px; border: none; border-radius: 2px; background: var(--border); outline: none; -webkit-appearance: none; appearance: none;">
             <span id="spacingValue" style="font-size: 10px; color: var(--accent); font-weight: 700; min-width: 24px; text-align: right; flex-shrink: 0;">1.0x</span>
             <style>
                 #spacingSlider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 1px solid rgba(212, 168, 76, 0.5); }
@@ -926,7 +926,8 @@ const spacingValue = document.getElementById('spacingValue');
 
 if (spacingSlider) {
     spacingSlider.addEventListener('input', (e) => {
-        spacingMultiplier = parseFloat(e.target.value);
+        spacingMultiplier = Math.min(1.7, Math.max(1.0, parseFloat(e.target.value) || 1.0));
+        e.target.value = spacingMultiplier.toFixed(1);
         spacingValue.textContent = spacingMultiplier.toFixed(1) + 'x';
         saveSpacingToStorage(spacingMultiplier);
         scheduleUpdate();
@@ -1041,14 +1042,24 @@ ${colorCSS}
 const TREE=${JSON.stringify(treeData)};
 const INIT_CAM=${camJSON};
 const INIT_SEL=${selectedJSON};
+const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+const sm=clamp(${spacingMult},1,1.7);
+const t=(sm-1)/0.7;
+const nodeW=Math.round(190*sm);
+const nodeH=Math.round(100*sm);
+const baseGapX=280;
+const minGapX=nodeW+44;
+const gapX=Math.max(Math.round(baseGapX*(1+t*0.45)),minGapX);
+const gapY=Math.round(170+Math.pow(t,1.05)*120);
+const branchGap=Math.max(24,Math.min(58,Math.round(gapY*0.34)));
 const C={
-  nW:${Math.round(190 * spacingMult)},
-  nH:${Math.round(100 * spacingMult)},
-  xG:${Math.round(280 * (1 + ((spacingMult - 1) * 0.25)))},
-  yG:${Math.round((100 * spacingMult) + (80 * (1 + ((spacingMult - 1) * 0.55))))},
+  nW:nodeW,
+  nH:nodeH,
+  xG:gapX,
+  yG:nodeH+gapY,
   pX:120,
   pY:80,
-  bG:${Math.max(20, Math.min(56, Math.round((80 * (1 + ((spacingMult - 1) * 0.55))) * 0.35)))},
+  bG:branchGap,
   minZ:0.15,
   maxZ:3
 };
@@ -1539,11 +1550,12 @@ function loadSpacingFromStorage() {
         const val = localStorage.getItem(SPACING_KEY);
         if (val) {
             const mult = parseFloat(val);
-            if (!isNaN(mult) && mult >= 0.6 && mult <= 2.4) {
-                spacingMultiplier = mult;
-                if (spacingSlider) spacingSlider.value = mult;
-                if (spacingValue) spacingValue.textContent = mult.toFixed(1) + 'x';
-                return mult;
+            if (!isNaN(mult)) {
+                const clamped = Math.min(1.7, Math.max(1.0, mult));
+                spacingMultiplier = clamped;
+                if (spacingSlider) spacingSlider.value = clamped;
+                if (spacingValue) spacingValue.textContent = clamped.toFixed(1) + 'x';
+                return clamped;
             }
         }
     } catch (e) {}
