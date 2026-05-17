@@ -1016,7 +1016,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3fb;fon
 svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 #nodesLayer{position:absolute;left:0;top:0;z-index:2}
 .node-wrap{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
-.node{position:relative;width:${Math.round(190 * spacingMult)}px;min-height:${Math.round(54 * spacingMult)}px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${Math.round(140 * spacingMult) / 10}px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);contain:layout style paint;cursor:pointer}
+.node{position:relative;width:${Math.round(190 * spacingMult)}px;min-height:${Math.round(100 * spacingMult)}px;padding:12px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${Math.round(180 * spacingMult) / 10}px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);contain:layout style paint;cursor:pointer}
 .node.selected{outline:3px solid rgba(212,168,76,.9);outline-offset:4px;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 8px 24px rgba(0,0,0,.22)}
 .node.drag-source{outline:3px solid rgba(244,208,120,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.38),0 12px 26px rgba(0,0,0,.3)}
 .node.drop-target{outline:3px solid rgba(34,197,94,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.42),0 12px 26px rgba(0,0,0,.28)}
@@ -1042,7 +1042,7 @@ const TREE=${JSON.stringify(treeData)};
 const INIT_CAM=${camJSON};
 const INIT_SEL=${selectedJSON};
 const sm=${spacingMult};
-const C={nW:${Math.round(190 * spacingMult)},nH:${Math.round(54 * spacingMult)},xG:280,yG:${Math.round(180 * spacingMult)},pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
+const C={nW:${Math.round(190 * spacingMult)},nH:${Math.round(100 * spacingMult)},xG:280,yG:${Math.round(180 * spacingMult)},pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
 const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
 const ch=new Map(),po=new Map(),nd=new Map(),an=[];
 let rt=null,selId=INIT_SEL,renamingId=null,focusRenameId=null,suppressSceneClick=false;
