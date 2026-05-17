@@ -437,6 +437,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
             <div class="panel-foot">
                 <span class="status" id="status"></span>
                 <button class="btn-export" id="btnCopy">Copy array</button>
+                <button class="btn-export" id="btnPrintText">Print text</button>
             </div>
             <div class="import-section" id="importSection">
                 <button class="import-toggle" id="importToggle">
@@ -1646,6 +1647,34 @@ document.getElementById('btnCopy').addEventListener('click', () => {
         const prev = b.textContent; b.textContent = 'Copied ✓';
         setTimeout(() => b.textContent = prev, 1800);
     });
+});
+
+function buildIndentedText(node, depth = 0, out = []) {
+    out.push(' '.repeat(depth * 2) + node.name);
+    for (const c of node.children) buildIndentedText(c, depth + 1, out);
+    return out;
+}
+
+document.getElementById('btnPrintText').addEventListener('click', () => {
+    const lines = buildIndentedText(root).join('\n');
+    const header = 'Schema: two-space indent per level';
+    const content = header + '\n\n' + lines;
+
+    const w = window.open('', '_blank', 'noopener');
+    if (!w) {
+        alert('Popup blocked — copy manually:\n\n' + content);
+        return;
+    }
+    w.document.title = 'Organization Text';
+    const btn = w.document.createElement('button');
+    btn.textContent = 'Print';
+    btn.style.position = 'fixed'; btn.style.top = '8px'; btn.style.right = '8px'; btn.style.padding = '8px 12px';
+    btn.addEventListener('click', () => w.print());
+    const pre = w.document.createElement('pre');
+    pre.style.whiteSpace = 'pre-wrap'; pre.style.fontFamily = 'monospace'; pre.style.padding = '16px';
+    pre.textContent = content;
+    w.document.body.appendChild(btn);
+    w.document.body.appendChild(pre);
 });
 
 /* ── Import from indented text ── */
