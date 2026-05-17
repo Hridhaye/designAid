@@ -97,11 +97,16 @@ html, body {
 }
 .panel-head-btn:hover { color: var(--accent); border-color: var(--accent2); }
 
+.panel-head-btn.active {
+    color: var(--accent);
+    border-color: var(--accent2);
+    background: rgba(212,168,76,0.08);
+}
+
 .tree-scroll {
     flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 60px;
     -webkit-overflow-scrolling: touch;
 }
-.tree-scroll.bottom-hidden { padding-bottom: 10px; }
 .tree-scroll::-webkit-scrollbar { width: 3px; }
 .tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
@@ -201,17 +206,6 @@ html, body {
     border-top: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
 }
-.panel-bottom {
-    display: flex; flex-direction: column;
-    overflow: hidden;
-    transition: height 0.22s ease, opacity 0.22s ease;
-}
-.panel-bottom.collapsed {
-    height: 0;
-    min-height: 0;
-    opacity: 0;
-    display: none;
-}
 .status { flex: 1; font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
 
 .btn-export {
@@ -243,6 +237,13 @@ html, body {
 .import-section {
     flex-shrink: 0;
     border-top: 1px solid var(--border);
+}
+
+.panel.tools-collapsed .panel-tools {
+    display: none;
+}
+.panel.tools-collapsed .tree-scroll {
+    padding-bottom: 8px;
 }
 
 .import-toggle {
@@ -448,10 +449,10 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                 <span class="panel-head-title">Members</span>
                 <button class="panel-head-btn" id="btnExp">Expand</button>
                 <button class="panel-head-btn" id="btnCol">Collapse</button>
-                <button class="panel-head-btn" id="btnBottomToggle">Hide details</button>
+                <button class="panel-head-btn" id="btnTools">Hide tools</button>
             </div>
             <div class="tree-scroll" id="treeRoot"></div>
-            <div class="panel-bottom" id="panelBottom">
+            <div class="panel-tools" id="panelTools">
                 <div class="legend" id="legend"></div>
                 <div class="panel-foot">
                     <span class="status" id="status"></span>
@@ -492,6 +493,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                     </div>
                 </div>
             </div>
+        </div>
 
         <div class="preview">
             <iframe id="preview" title="Chart Preview"></iframe>
@@ -946,10 +948,9 @@ document.getElementById('btnCol').addEventListener('click', () => { pushUndoStat
 /* ── Panel toggle ── */
 const panelEl = document.getElementById('panel');
 const btnToggle = document.getElementById('btnToggle');
-const panelBottom = document.getElementById('panelBottom');
-const btnBottomToggle = document.getElementById('btnBottomToggle');
+const btnTools = document.getElementById('btnTools');
 let panelOpen = true;
-let bottomOpen = true;
+let panelToolsCollapsed = false;
 
 btnToggle.addEventListener('click', () => {
     panelOpen = !panelOpen;
@@ -957,11 +958,11 @@ btnToggle.addEventListener('click', () => {
     btnToggle.style.color = panelOpen ? '' : 'var(--accent)';
 });
 
-btnBottomToggle.addEventListener('click', () => {
-    bottomOpen = !bottomOpen;
-    panelBottom.classList.toggle('collapsed', !bottomOpen);
-    treeEl.classList.toggle('bottom-hidden', !bottomOpen);
-    btnBottomToggle.textContent = bottomOpen ? 'Hide details' : 'Show details';
+btnTools.addEventListener('click', () => {
+    panelToolsCollapsed = !panelToolsCollapsed;
+    panelEl.classList.toggle('tools-collapsed', panelToolsCollapsed);
+    btnTools.textContent = panelToolsCollapsed ? 'Show tools' : 'Hide tools';
+    btnTools.classList.toggle('active', panelToolsCollapsed);
 });
 
 /* ── Spacing control ── */
