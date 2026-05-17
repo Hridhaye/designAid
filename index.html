@@ -25,7 +25,7 @@
     --sel:     rgba(212,168,76,0.16);
     --mono:    'Courier Prime', monospace;
     --head:    'Cinzel', Georgia, serif;
-    --panel-w: 360px;
+    --panel-w: 420px;
 }
 
 html, body {
@@ -113,48 +113,48 @@ html, body {
 /* ── Node row ── */
 .tree-row {
     display: flex; align-items: center;
-    min-height: 36px; /* taller for touch */
+    min-height: 34px;
     padding-right: 4px; cursor: pointer; position: relative;
 }
 .tree-row:hover { background: var(--hover); }
 .tree-row.selected { background: var(--sel); }
 
 /* guide lines */
-.vline { flex-shrink: 0; width: 20px; height: 36px; position: relative; }
+.vline { flex-shrink: 0; width: 16px; height: 34px; position: relative; }
 .vline.continues::before {
-    content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+    content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
     width: 1px; background: var(--border2);
 }
 
-.connector { flex-shrink: 0; width: 20px; height: 36px; position: relative; }
+.connector { flex-shrink: 0; width: 16px; height: 34px; position: relative; }
 .connector::before {
-    content: ''; position: absolute; left: 10px; top: 0; height: 18px;
+    content: ''; position: absolute; left: 8px; top: 0; height: 17px;
     width: 1px; background: var(--border2);
 }
 .connector::after {
-    content: ''; position: absolute; left: 10px; top: 18px;
-    width: 8px; height: 1px; background: var(--border2);
+    content: ''; position: absolute; left: 8px; top: 17px;
+    width: 7px; height: 1px; background: var(--border2);
 }
-.connector.not-last::before { height: 36px; }
+.connector.not-last::before { height: 34px; }
 
 /* collapse toggle */
 .toggle {
-    flex-shrink: 0; width: 16px; height: 16px; border: 1px solid var(--border2);
-    color: var(--text); font-size: 9px; display: flex; align-items: center;
-    justify-content: center; cursor: pointer; margin-right: 5px;
+    flex-shrink: 0; width: 14px; height: 14px; border: 1px solid var(--border2);
+    color: var(--text); font-size: 8px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; margin-right: 4px;
     transition: color 0.1s, border-color 0.1s; touch-action: manipulation;
 }
 .toggle:hover { border-color: var(--accent2); color: var(--accent); }
 .toggle.leaf { border-color: transparent; color: var(--muted); cursor: default; }
 
 /* sign dot */
-.sign-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
+.sign-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-right: 5px; }
 
 /* label */
 .node-label {
-    flex: 1; min-width: 0; font-size: 13px; color: var(--text);
+    flex: 1; min-width: 0; font-size: 11.5px; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    line-height: 36px; letter-spacing: 0.01em;
+    line-height: 34px; letter-spacing: 0.01em;
 }
 .node-label.root-lbl { color: var(--accent); font-weight: 700; }
 
@@ -162,23 +162,30 @@ html, body {
 .node-input {
     flex: 1; min-width: 0; background: rgba(0,0,0,0.35); border: none;
     border-bottom: 1px solid var(--accent2); color: var(--text);
-    font-family: var(--mono); font-size: 13px; padding: 0 2px;
-    outline: none; letter-spacing: 0.01em; height: 28px;
+    font-family: var(--mono); font-size: 11.5px; padding: 0 2px;
+    outline: none; letter-spacing: 0.01em; height: 26px;
 }
 
-/* action buttons — always visible on touch devices, hover-only on pointer devices */
-.row-actions { display: flex; gap: 0; flex-shrink: 0; margin-left: 2px; opacity: 0; transition: opacity 0.1s; }
+/* action buttons — float as an overlay on the right so they don't eat label space */
+.row-actions {
+    display: flex; gap: 0; flex-shrink: 0;
+    position: absolute; right: 0; top: 0; bottom: 0;
+    align-items: center;
+    background: linear-gradient(to right, transparent 0%, var(--panel) 22%);
+    padding-left: 18px;
+    opacity: 0; transition: opacity 0.1s; pointer-events: none;
+}
 .tree-row:hover .row-actions,
-.tree-row.selected .row-actions { opacity: 1; }
+.tree-row.selected .row-actions { opacity: 1; pointer-events: all; }
 
 /* on touch, always show */
 @media (hover: none) {
-    .row-actions { opacity: 1; }
+    .row-actions { opacity: 1; pointer-events: all; }
 }
 
 .row-btn {
-    background: none; border: none; color: var(--muted); font-size: 13px;
-    width: 26px; height: 36px; cursor: pointer; display: flex;
+    background: none; border: none; color: var(--muted); font-size: 12px;
+    width: 24px; height: 34px; cursor: pointer; display: flex;
     align-items: center; justify-content: center;
     transition: color 0.1s, background 0.1s;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
@@ -258,6 +265,61 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 }
 .save-indicator.visible { opacity: 1; }
 
+/* ── Import section ── */
+.import-section {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+}
+
+.import-toggle {
+    width: 100%; background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; color: var(--muted); font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    transition: color 0.1s; text-align: left; touch-action: manipulation;
+}
+.import-toggle:hover { color: var(--text); }
+
+.import-toggle-arrow {
+    font-size: 8px; transition: transform 0.18s ease; display: inline-block;
+}
+.import-toggle-arrow.open { transform: rotate(90deg); }
+
+.import-body {
+    display: none; flex-direction: column;
+    padding: 0 14px 12px; gap: 8px;
+}
+.import-body.open { display: flex; }
+
+.import-textarea {
+    width: 100%; height: 140px; resize: none;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 11px;
+    line-height: 1.7; padding: 8px 10px; outline: none;
+    letter-spacing: 0.01em; tab-size: 2; caret-color: var(--accent);
+    transition: border-color 0.15s;
+}
+.import-textarea:focus { border-color: var(--accent2); }
+.import-textarea::placeholder { color: var(--dim); }
+
+.import-foot { display: flex; align-items: center; gap: 10px; }
+
+.import-status { flex: 1; font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+.import-status.ok  { color: var(--accent); }
+.import-status.err { color: #d07070; }
+
+.btn-import {
+    background: none; border: 1px solid var(--border2); color: var(--muted);
+    font-family: var(--head); font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 5px 12px; cursor: pointer; white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    touch-action: manipulation;
+}
+.btn-import:not(:disabled):hover {
+    color: var(--accent); border-color: var(--accent2);
+    background: rgba(212,168,76,0.07);
+}
+.btn-import:disabled { opacity: 0.35; cursor: default; }
 
 @media (max-width: 700px) {
     :root { --panel-w: 100vw; }
@@ -315,6 +377,24 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
             <div class="panel-foot">
                 <span class="status" id="status"></span>
                 <button class="btn-export" id="btnCopy">Copy array</button>
+            </div>
+            <div class="import-section" id="importSection">
+                <button class="import-toggle" id="importToggle">
+                    <span class="import-toggle-arrow" id="importArrow">▶</span>
+                    <span>Paste import</span>
+                </button>
+                <div class="import-body" id="importBody">
+                    <textarea
+                        id="importInput"
+                        class="import-textarea"
+                        spellcheck="false"
+                        placeholder="Founding Father&#10;  Starbender Aerion&#10;    Starbender Calliothene&#10;  Veilcross Hadrien&#10;    Veilcross Ilm"
+                    ></textarea>
+                    <div class="import-foot">
+                        <span class="import-status" id="importStatus">—</span>
+                        <button class="btn-import" id="btnImport" disabled>Replace tree</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -640,6 +720,14 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Tab') { e.preventDefault(); addChild(sel); }
     else if (e.key === 'Enter') { e.preventDefault(); const p = findParent(sel); if (p) addSibling(sel); else addChild(sel); }
     else if (e.key === 'F2') { e.preventDefault(); startRename(sel); }
+    else if (e.key === ' ') {
+        e.preventDefault();
+        const node = find(sel);
+        if (node.children.length > 0) {
+            node.collapsed = !node.collapsed;
+            render();
+        }
+    }
     else if (e.key === 'Delete') { 
         const parent = findParent(sel);
         if (parent) { e.preventDefault(); deleteNode(sel); }
@@ -826,6 +914,82 @@ document.getElementById('btnCopy').addEventListener('click', () => {
         const prev = b.textContent; b.textContent = 'Copied ✓';
         setTimeout(() => b.textContent = prev, 1800);
     });
+});
+
+/* ── Import from indented text ── */
+const importToggle = document.getElementById('importToggle');
+const importArrow  = document.getElementById('importArrow');
+const importBody   = document.getElementById('importBody');
+const importInput  = document.getElementById('importInput');
+const importStatus = document.getElementById('importStatus');
+const btnImport    = document.getElementById('btnImport');
+
+importToggle.addEventListener('click', () => {
+    const open = importBody.classList.toggle('open');
+    importArrow.classList.toggle('open', open);
+});
+
+function parseIndented(text) {
+    const lines = text.split('\n');
+    const pairs = [];
+    const stack = []; // [{name, depth}]
+    let nodeCount = 0;
+
+    for (const raw of lines) {
+        if (!raw.trim()) continue;
+
+        let indent = 0;
+        for (const ch of raw) {
+            if (ch === ' ') indent++;
+            else if (ch === '\t') indent += 2;
+            else break;
+        }
+        const depth = Math.round(indent / 2);
+        const name = raw.trim();
+        if (!name) continue;
+
+        while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
+        if (stack.length > 0) pairs.push([stack[stack.length - 1].name, name]);
+        stack.push({ name, depth });
+        nodeCount++;
+    }
+    return { pairs, nodeCount };
+}
+
+importInput.addEventListener('input', () => {
+    const text = importInput.value.trim();
+    if (!text) {
+        importStatus.textContent = '—';
+        importStatus.className = 'import-status';
+        btnImport.disabled = true;
+        return;
+    }
+    const { pairs, nodeCount } = parseIndented(text);
+    if (nodeCount < 2 || pairs.length === 0) {
+        importStatus.textContent = 'Need at least 2 indented nodes';
+        importStatus.className = 'import-status err';
+        btnImport.disabled = true;
+    } else {
+        importStatus.textContent = `${nodeCount} nodes · ${pairs.length} relationships`;
+        importStatus.className = 'import-status ok';
+        btnImport.disabled = false;
+    }
+});
+
+btnImport.addEventListener('click', () => {
+    const { pairs } = parseIndented(importInput.value.trim());
+    if (!pairs.length) return;
+    root = fromPairs(pairs);
+    sel = null;
+    importInput.value = '';
+    importStatus.textContent = '—';
+    importStatus.className = 'import-status';
+    btnImport.disabled = true;
+    // close the import panel
+    importBody.classList.remove('open');
+    importArrow.classList.remove('open');
+    render();
+    scheduleUpdate();
 });
 
 /* ── Init ── */
