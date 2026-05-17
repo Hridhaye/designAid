@@ -410,6 +410,17 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         <span class="save-indicator" id="saveIndicator"></span>
         <button class="btn-save" id="btnSave">Save</button>
         <button class="btn-save" id="btnUndo" disabled>Undo</button>
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 140px;">
+            <label for="spacingSlider" style="font-family: var(--head); font-size: 9px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;">Space</label>
+            <input type="range" id="spacingSlider" min="0.6" max="2.4" step="0.1" value="1.0" style="flex: 1; cursor: pointer; height: 4px; border: none; border-radius: 2px; background: var(--border); outline: none; -webkit-appearance: none; appearance: none;">
+            <span id="spacingValue" style="font-size: 10px; color: var(--accent); font-weight: 700; min-width: 24px; text-align: right; flex-shrink: 0;">1.0x</span>
+            <style>
+                #spacingSlider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 1px solid rgba(212, 168, 76, 0.5); }
+                #spacingSlider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 1px solid rgba(212, 168, 76, 0.5); }
+                #spacingSlider::-webkit-slider-runnable-track { background: transparent; height: 4px; border-radius: 2px; }
+                #spacingSlider::-moz-range-track { background: transparent; border: none; }
+            </style>
+        </div>
         <span class="header-hint">Click to select · dbl-click to rename · Tab = child · Enter = sibling</span>
     </header>
 
@@ -427,20 +438,6 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                 <span class="status" id="status"></span>
                 <button class="btn-export" id="btnCopy">Copy array</button>
             </div>
-            <div class="spacing-control" id="spacingControl" style="flex-shrink: 0; padding: 8px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <label for="spacingSlider" style="font-family: var(--head); font-size: 9px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; white-space: nowrap;">Spacing</label>
-                    <span id="spacingValue" style="font-size: 11px; color: var(--accent); font-weight: 700; min-width: 28px; text-align: right;">1.0x</span>
-                </div>
-                <input type="range" id="spacingSlider" min="0.6" max="2.4" step="0.1" value="1.0" style="width: 100%; cursor: pointer; height: 4px; border: none; border-radius: 2px; background: linear-gradient(to right, var(--border2) 0%, var(--border2) 100%); outline: none; -webkit-appearance: none; appearance: none;">
-                <style>
-                    #spacingSlider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 1px solid rgba(212, 168, 76, 0.5); }
-                    #spacingSlider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 1px solid rgba(212, 168, 76, 0.5); }
-                    #spacingSlider::-webkit-slider-runnable-track { background: var(--border); height: 4px; border-radius: 2px; }
-                    #spacingSlider::-moz-range-track { background: transparent; border: none; }
-                </style>
-            </div>
-            
             <div class="import-section" id="importSection">
                 <button class="import-toggle" id="importToggle">
                     <span class="import-toggle-arrow" id="importArrow">▶</span>
@@ -1019,7 +1016,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3fb;fon
 svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 #nodesLayer{position:absolute;left:0;top:0;z-index:2}
 .node-wrap{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
-.node{position:relative;width:${Math.round(190 * (1 + (spacingMult - 1) * 0.15))}px;min-height:${Math.round(54 * (1 + (spacingMult - 1) * 0.15))}px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);contain:layout style paint;cursor:pointer}
+.node{position:relative;width:${Math.round(190 * (1 + (spacingMult - 1) * 0.35))}px;min-height:${Math.round(54 * (1 + (spacingMult - 1) * 0.35))}px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);contain:layout style paint;cursor:pointer}
 .node.selected{outline:3px solid rgba(212,168,76,.9);outline-offset:4px;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 8px 24px rgba(0,0,0,.22)}
 .node.drag-source{outline:3px solid rgba(244,208,120,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.38),0 12px 26px rgba(0,0,0,.3)}
 .node.drop-target{outline:3px solid rgba(34,197,94,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.42),0 12px 26px rgba(0,0,0,.28)}
@@ -1045,7 +1042,7 @@ const TREE=${JSON.stringify(treeData)};
 const INIT_CAM=${camJSON};
 const INIT_SEL=${selectedJSON};
 const sm=${spacingMult};
-const C={nW:${Math.round(190 * (1 + (spacingMult - 1) * 0.15))},nH:${Math.round(54 * (1 + (spacingMult - 1) * 0.15))},xG:280,yG:${Math.round(180 * spacingMult)},pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
+const C={nW:${Math.round(190 * (1 + (spacingMult - 1) * 0.35))},nH:${Math.round(54 * (1 + (spacingMult - 1) * 0.35))},xG:280,yG:${Math.round(180 * spacingMult)},pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
 const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
 const ch=new Map(),po=new Map(),nd=new Map(),an=[];
 let rt=null,selId=INIT_SEL,renamingId=null,focusRenameId=null,suppressSceneClick=false;
