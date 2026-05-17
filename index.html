@@ -200,11 +200,13 @@ html, body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: auto;
-    transition: height 0.22s ease;
+    max-height: 1200px;
+    transform-origin: top;
+    transition: max-height 0.22s ease, transform 0.22s ease;
 }
 .bottom-tools.collapsed {
-    height: 0;
+    max-height: 0;
+    transform: translateY(-8px);
     pointer-events: none;
 }
 
@@ -957,29 +959,8 @@ btnToggle.addEventListener('click', () => {
 
 function setBottomOpen(open) {
     bottomOpen = open;
+    bottomTools.classList.toggle('collapsed', !open);
     btnBottom.textContent = open ? 'Hide bottom' : 'Show bottom';
-
-    if (open) {
-        bottomTools.classList.remove('collapsed');
-        const fullHeight = bottomTools.scrollHeight;
-        bottomTools.style.height = '0px';
-        requestAnimationFrame(() => {
-            bottomTools.style.height = fullHeight + 'px';
-        });
-        bottomTools.addEventListener('transitionend', function resetHeight(e) {
-            if (e.propertyName === 'height') {
-                bottomTools.style.height = '';
-                bottomTools.removeEventListener('transitionend', resetHeight);
-            }
-        });
-    } else {
-        const fullHeight = bottomTools.scrollHeight;
-        bottomTools.style.height = fullHeight + 'px';
-        requestAnimationFrame(() => {
-            bottomTools.style.height = '0px';
-            bottomTools.classList.add('collapsed');
-        });
-    }
 }
 
 btnBottom.addEventListener('click', () => {
