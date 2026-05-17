@@ -25,7 +25,7 @@ import { serializeNode, allColorMap } from './data.js';
 export const CARD = {
   baseWidth:  190,   // px at 1x spacing multiplier
   baseHeight: 100,   // px at 1x
-  baseFontSz: 20,    // tenths of a px (divided by 10 in CSS), at 1x
+  baseFontSz: 14,    // px at 1x (scales with spacing multiplier)
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ ${_buildPreviewScript(treeJSON, camJSON, selJSON, smClamped, colorMap)}
 function _buildPreviewCSS(sm) {
   const nodeW  = Math.round(CARD.baseWidth  * sm);
   const nodeH  = Math.round(CARD.baseHeight * sm);
-  const fontSz = Math.round(CARD.baseFontSz * sm) / 10;
+  const fontSz = Math.round(CARD.baseFontSz * sm);
   const btnSz  = Math.round(28 * sm);
   const btnFnt = Math.max(13, Math.round(13 * sm));
   const actGap = Math.round(6 * sm);
