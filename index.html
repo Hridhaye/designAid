@@ -97,12 +97,6 @@ html, body {
 }
 .panel-head-btn:hover { color: var(--accent); border-color: var(--accent2); }
 
-.panel-head-btn.active {
-    color: var(--accent);
-    border-color: var(--accent2);
-    background: rgba(212,168,76,0.08);
-}
-
 .tree-scroll {
     flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 60px;
     -webkit-overflow-scrolling: touch;
@@ -239,13 +233,6 @@ html, body {
     border-top: 1px solid var(--border);
 }
 
-.panel.tools-collapsed .panel-tools {
-    display: none;
-}
-.panel.tools-collapsed .tree-scroll {
-    padding-bottom: 8px;
-}
-
 .import-toggle {
     width: 100%; background: none; border: none; cursor: pointer;
     display: flex; align-items: center; gap: 8px;
@@ -332,11 +319,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     .row-btn { width: 42px; height: 42px; font-size: 13px; }
     .row-btn.reorder { width: 46px; }
     .row-actions { gap: 4px; padding-left: 18px; }
-    .tree-row { padding-right: 10px; min-height: 40px; }
-    .vline, .connector { height: 40px; }
-    .connector::before { height: 20px; }
-    .connector::after { top: 20px; }
-    .connector.not-last::before { height: 40px; }
+    .tree-row { padding-right: 10px; }
     .node-label { font-size: 15px; line-height: 40px; }
     .node-input { font-size: 14px; height: 32px; padding: 3px 6px; }
     .toggle { width: 22px; height: 22px; font-size: 12px; margin-right: 8px; }
@@ -449,47 +432,44 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                 <span class="panel-head-title">Members</span>
                 <button class="panel-head-btn" id="btnExp">Expand</button>
                 <button class="panel-head-btn" id="btnCol">Collapse</button>
-                <button class="panel-head-btn" id="btnTools">Hide tools</button>
             </div>
             <div class="tree-scroll" id="treeRoot"></div>
-            <div class="panel-tools" id="panelTools">
-                <div class="legend" id="legend"></div>
-                <div class="panel-foot">
-                    <span class="status" id="status"></span>
-                    <button class="btn-export" id="btnCopy">Copy array</button>
-                    <button class="btn-export" id="btnPrintText">Print text</button>
-                </div>
-                <div class="import-section" id="importSection">
-                    <button class="import-toggle" id="importToggle">
-                        <span class="import-toggle-arrow" id="importArrow">▶</span>
-                        <span>Paste import</span>
-                    </button>
-                    <div class="import-body" id="importBody">
-                        <textarea
-                            id="importInput"
-                            class="import-textarea"
-                            spellcheck="false"
-                            placeholder="Founding Father&#10;  Starbender Aerion&#10;    Starbender Calliothene&#10;  Veilcross Hadrien&#10;    Veilcross Ilm"
-                        ></textarea>
-                        <div class="import-foot">
-                            <span class="import-status" id="importStatus">—</span>
-                            <button class="btn-import" id="btnImport" disabled>Replace tree</button>
-                        </div>
+            <div class="legend" id="legend"></div>
+            <div class="panel-foot">
+                <span class="status" id="status"></span>
+                <button class="btn-export" id="btnCopy">Copy array</button>
+                <button class="btn-export" id="btnPrintText">Print text</button>
+            </div>
+            <div class="import-section" id="importSection">
+                <button class="import-toggle" id="importToggle">
+                    <span class="import-toggle-arrow" id="importArrow">▶</span>
+                    <span>Paste import</span>
+                </button>
+                <div class="import-body" id="importBody">
+                    <textarea
+                        id="importInput"
+                        class="import-textarea"
+                        spellcheck="false"
+                        placeholder="Founding Father&#10;  Starbender Aerion&#10;    Starbender Calliothene&#10;  Veilcross Hadrien&#10;    Veilcross Ilm"
+                    ></textarea>
+                    <div class="import-foot">
+                        <span class="import-status" id="importStatus">—</span>
+                        <button class="btn-import" id="btnImport" disabled>Replace tree</button>
                     </div>
                 </div>
-                <div class="import-section" id="syncSection">
-                    <button class="import-toggle" id="syncToggle">
-                        <span class="import-toggle-arrow" id="syncArrow">▶</span>
-                        <span>Cloud sync (GitHub Gist)</span>
-                    </button>
-                    <div class="import-body" id="syncBody">
-                        <input id="syncGistId" class="import-textarea" style="height: 38px;" placeholder="Gist ID (required)" />
-                        <input id="syncFileName" class="import-textarea" style="height: 38px;" placeholder="File name in gist (default: cult-chart-save.json)" />
-                        <input id="syncToken" class="import-textarea" style="height: 38px;" type="password" placeholder="GitHub token (gist scope)" />
-                        <div class="import-foot">
-                            <span class="import-status" id="syncStatus">—</span>
-                            <button class="btn-import" id="btnSyncConfig">Save config</button>
-                        </div>
+            </div>
+            <div class="import-section" id="syncSection">
+                <button class="import-toggle" id="syncToggle">
+                    <span class="import-toggle-arrow" id="syncArrow">▶</span>
+                    <span>Cloud sync (GitHub Gist)</span>
+                </button>
+                <div class="import-body" id="syncBody">
+                    <input id="syncGistId" class="import-textarea" style="height: 38px;" placeholder="Gist ID (required)" />
+                    <input id="syncFileName" class="import-textarea" style="height: 38px;" placeholder="File name in gist (default: cult-chart-save.json)" />
+                    <input id="syncToken" class="import-textarea" style="height: 38px;" type="password" placeholder="GitHub token (gist scope)" />
+                    <div class="import-foot">
+                        <span class="import-status" id="syncStatus">—</span>
+                        <button class="btn-import" id="btnSyncConfig">Save config</button>
                     </div>
                 </div>
             </div>
@@ -948,21 +928,12 @@ document.getElementById('btnCol').addEventListener('click', () => { pushUndoStat
 /* ── Panel toggle ── */
 const panelEl = document.getElementById('panel');
 const btnToggle = document.getElementById('btnToggle');
-const btnTools = document.getElementById('btnTools');
 let panelOpen = true;
-let panelToolsCollapsed = false;
 
 btnToggle.addEventListener('click', () => {
     panelOpen = !panelOpen;
     panelEl.classList.toggle('collapsed', !panelOpen);
     btnToggle.style.color = panelOpen ? '' : 'var(--accent)';
-});
-
-btnTools.addEventListener('click', () => {
-    panelToolsCollapsed = !panelToolsCollapsed;
-    panelEl.classList.toggle('tools-collapsed', panelToolsCollapsed);
-    btnTools.textContent = panelToolsCollapsed ? 'Show tools' : 'Hide tools';
-    btnTools.classList.toggle('active', panelToolsCollapsed);
 });
 
 /* ── Spacing control ── */
