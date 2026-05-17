@@ -457,6 +457,15 @@ function toRelationships(node, out = []) {
     return out;
 }
 
+function toGraph(node, out = { nodes: [], rels: [] }) {
+    out.nodes.push({ id: node.id, name: node.name });
+    for (const c of node.children) {
+        out.rels.push({ parent: node.id, child: c.id });
+        toGraph(c, out);
+    }
+    return out;
+}
+
 /* ── Sign → color ── */
 const SIGNS = {
     Founding:'#6c757d', Starbender:'#3b82f6', Veilcross:'#8b5cf6',
@@ -548,6 +557,7 @@ function render() {
     renderNode(root, [], true);
     renderLegend();
     statusEl.textContent = `${countAll(root) - 1} members · ${toRelationships(root).length} relationships`;
+    notifyPreviewSelection();
 }
 
 function renderNode(node, parentBits, isLast) {
@@ -781,20 +791,43 @@ function scheduleUpdate() {
     markUnsaved();
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-        previewEl.srcdoc = buildChart(toRelationships(root), cameraState);
+        previewEl.srcdoc = buildChart(toGraph(root), cameraState, sel);
     }, 300);
 }
 
+function notifyPreviewSelection() {
+    if (previewEl.contentWindow && sel !== null) {
+        previewEl.contentWindow.postMessage({ type: 'chart-highlight', id: sel }, '*');
+    }
+}
+
 window.addEventListener('message', e => {
-    if (e.data && e.data.type === 'cam') {
+    if (!e.data || !e.data.type) return;
+    if (e.data.type === 'cam') {
         cameraState = e.data.cam;
+    } else if (e.data.type === 'chart-select') {
+        if (typeof e.data.id === 'number') {
+            sel = e.data.id;
+            render();
+        }
+    } else if (e.data.type === 'chart-action') {
+        const { action, id } = e.data;
+        if (typeof id !== 'number') return;
+        sel = id;
+        if (action === 'rename') startRename(id);
+        else if (action === 'addChild') addChild(id);
+        else if (action === 'addSibling') addSibling(id);
+        else if (action === 'moveUp') moveSibling(id, -1);
+        else if (action === 'moveDown') moveSibling(id, 1);
+        else if (action === 'delete') deleteNode(id);
     }
 });
 
-function buildChart(rels, initialCamera) {
+function buildChart(graph, initialCamera, selectedId) {
     const colorMap = allColorMap();
     const colorCSS = Object.entries(colorMap).map(([k, v]) => `.${k}{background:${v}}`).join('');
     const camJSON = initialCamera ? JSON.stringify(initialCamera) : 'null';
+    const selectedJSON = selectedId !== null ? JSON.stringify(selectedId) : 'null';
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -806,31 +839,63 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3fb;fon
 #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 #nodesLayer{position:absolute;left:0;top:0;z-index:2}
-.node{position:absolute;width:190px;min-height:54px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);transform:translateX(-50%);contain:layout style paint}
+.node{position:absolute;width:190px;min-height:54px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);transform:translateX(-50%);contain:layout style paint;cursor:pointer}
+.node.selected{box-shadow:0 0 0 2px rgba(255,255,255,.95);}
+.chart-actions{position:absolute;display:flex;gap:6px;padding:7px 10px;background:rgba(18,18,18,.92);border:1px solid rgba(255,255,255,.14);border-radius:10px;box-shadow:0 18px 30px rgba(0,0,0,.22);pointer-events:auto;z-index:4;transform:translateX(-50%);}
+.chart-actions.hidden{display:none;}
+.chart-actions button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:5px;padding:5px 9px;font:600 12px system-ui,sans-serif;cursor:pointer;}
+.chart-actions button:hover{background:rgba(255,255,255,.18);}
 ${colorCSS}
 </style></head><body>
 <div id="scene"><div id="world"><svg id="edges"></svg><div id="nodesLayer"></div></div></div>
 <script>
-const R=${JSON.stringify(rels)};
+const G=${JSON.stringify(graph)};
+const SELECTED=${selectedJSON};
 const INIT_CAM=${camJSON};
 const C={nW:190,nH:54,xG:280,yG:180,pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
 const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
 const ch=new Map(),po=new Map(),an=new Set();
-for(const[p,c]of R){an.add(p);an.add(c);po.set(c,p);if(!ch.has(p))ch.set(p,[]);ch.get(p).push(c);}
-const rt=[...an].find(n=>!po.has(n));
+for(const {parent, child} of G.rels){an.add(parent);an.add(child);po.set(child,parent);if(!ch.has(parent))ch.set(parent,[]);ch.get(parent).push(child);}
+const rootNode = G.nodes.find(n => !po.has(n.id));
+const rt = rootNode ? rootNode.id : null;
 const ps=new Map();let li=0;
 function lay(n,d){const k=ch.get(n)||[];if(!k.length){ps.set(n,{x:li++,y:d});return;}const s=li;for(const c of k)lay(c,d+1);ps.set(n,{x:(s+li-1)/2,y:d});}
-lay(rt,0);
+if (rt !== null) lay(rt,0);
 const md=Math.max(...[...ps.values()].map(p=>p.y));
 const cw=C.pX*2+Math.max(0,(li-1)*C.xG)+C.nW,ch2=C.pY*2+md*C.yG+C.nH;
 wr.style.width=cw+"px";wr.style.height=ch2+"px";
 sv.setAttribute("width",cw);sv.setAttribute("height",ch2);sv.setAttribute("viewBox","0 0 "+cw+" "+ch2);
-const xOf=n=>C.pX+ps.get(n).x*C.xG;
-const yOf=n=>C.pY+ps.get(n).y*C.yG;
-const sc2=n=>n==="Founding Father"?"Founding":n.split(" ")[0];
-function rN(){nl.innerHTML="";for(const nm of an){const d=document.createElement("div");d.className="node "+sc2(nm);d.textContent=nm;d.style.left=xOf(nm)+"px";d.style.top=yOf(nm)+"px";nl.appendChild(d);}}
-function rE(){sv.innerHTML="";const gm=new Map();for(const[p,c]of R){if(!gm.has(p))gm.set(p,[]);gm.get(p).push(c);}for(const[par,kids]of gm){const px=xOf(par),pb=yOf(par)+C.nH,by=pb+C.bG,xs=kids.map(xOf),mn=Math.min(...xs),mx2=Math.max(...xs);const g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("stroke","rgba(70,70,70,.9)");g.setAttribute("stroke-width","2");g.setAttribute("fill","none");const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",kids.length>1?"M "+px+" "+pb+" V "+by+" H "+mn+" H "+mx2:"M "+px+" "+pb+" V "+by+" H "+xs[0]);g.appendChild(t);for(const c of kids){const cx=xOf(c),cy=yOf(c),dd=document.createElementNS("http://www.w3.org/2000/svg","path");dd.setAttribute("d","M "+cx+" "+by+" V "+cy);g.appendChild(dd);}sv.appendChild(g);}}
+const xOf=id=>C.pX+ps.get(id).x*C.xG;
+const yOf=id=>C.pY+ps.get(id).y*C.yG;
+const S=new Map(G.nodes.map(n=>[n.id,n]));
+let selectedId = SELECTED;
+const actions=document.createElement("div");
+actions.id="chartActions";
+actions.className="chart-actions hidden";
+actions.innerHTML='<button data-action="rename">Rename</button><button data-action="addChild">Child</button><button data-action="addSibling">Sibling</button><button data-action="moveUp">Up</button><button data-action="moveDown">Down</button><button data-action="delete">Delete</button>';
+sc.appendChild(actions);
+actions.addEventListener("click",e=>{const action=e.target.dataset.action; if(!action||selectedId===null) return; window.parent.postMessage({type:'chart-action',action,id:selectedId},'*');});
+function selectNode(id, shouldPost=true){
+  selectedId=id;
+  nl.querySelectorAll('.node').forEach(el=>el.classList.toggle('selected', Number(el.dataset.id)===id));
+  const nodeEl=nl.querySelector(`[data-id="${id}"]`);
+  if(!nodeEl){actions.classList.add('hidden');return;}
+  const rect=nodeEl.getBoundingClientRect();
+  const sceneRect=sc.getBoundingClientRect();
+  actions.style.left=`${rect.left-sceneRect.left+rect.width/2}px`;
+  actions.style.top=`${rect.bottom-sceneRect.top+12}px`;
+  actions.classList.remove('hidden');
+  if(shouldPost) window.parent.postMessage({type:'chart-select',id},'*');
+}
+function rN(){nl.innerHTML="";for(const node of G.nodes){const d=document.createElement("div");d.className="node "+sc2(node.id);d.textContent=node.name;d.style.left=xOf(node.id)+"px";d.style.top=yOf(node.id)+"px";d.dataset.id=node.id;d.addEventListener("click",()=>selectNode(node.id,true));nl.appendChild(d);}}
+function rE(){sv.innerHTML="";const gm=new Map();for(const {parent, child} of G.rels){if(!gm.has(parent))gm.set(parent,[]);gm.get(parent).push(child);}for(const [par,kids] of gm){const px=xOf(par),pb=yOf(par)+C.nH,by=pb+C.bG,xs=kids.map(xOf),mn=Math.min(...xs),mx2=Math.max(...xs);const g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("stroke","rgba(70,70,70,.9)");g.setAttribute("stroke-width","2");g.setAttribute("fill","none");const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",kids.length>1?"M "+px+" "+pb+" V "+by+" H "+mn+" H "+mx2:"M "+px+" "+pb+" V "+by+" H "+xs[0]);g.appendChild(t);for(const c of kids){const cx=xOf(c),cy=yOf(c),dd=document.createElementNS("http://www.w3.org/2000/svg","path");dd.setAttribute("d","M "+cx+" "+by+" V "+cy);g.appendChild(dd);}sv.appendChild(g);}}
 rN();rE();
+if (SELECTED !== null) selectNode(SELECTED, false);
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'chart-highlight' && typeof e.data.id === 'number') {
+    selectNode(e.data.id, false);
+  }
+});
 
 /* ── Camera ── */
 const cam={x:0,y:0,z:1};
