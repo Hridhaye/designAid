@@ -301,7 +301,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     background: rgba(255,255,255,0.55); padding: 3px 7px; border-radius: 3px;
 }
 
-@media (max-width: 1280px), (hover: none), (pointer: coarse) {
+@media screen and (max-width: 1024px), screen and (max-width: 1280px) and (pointer: coarse) {
 
     :root { --panel-w: 100vw; }
 
@@ -312,11 +312,17 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     .panel-head .panel-head-btn, .btn-save, .btn-export, .btn-import {
         padding: 8px 12px; font-size: 14px; min-height: 40px;
     }
-    .row-btn { width: 44px; height: 44px; font-size: 14px; }
-    .row-btn.reorder { width: 48px; }
+    .import-toggle {
+        padding: 10px 16px; font-size: 13px; min-height: 44px;
+    }
+    .import-toggle-arrow { font-size: 10px; }
+    .row-btn { width: 46px; height: 46px; font-size: 14px; }
+    .row-btn.reorder { width: 52px; }
+    .row-actions { gap: 6px; padding-left: 22px; }
+    .tree-row { padding-right: 10px; }
     .node-label { font-size: 15px; line-height: 40px; }
     .node-input { font-size: 15px; height: 36px; padding: 4px 6px; }
-    .toggle { width: 20px; height: 20px; font-size: 12px; margin-right: 8px; }
+    .toggle { width: 22px; height: 22px; font-size: 12px; margin-right: 8px; }
     .sign-dot { width: 10px; height: 10px; margin-right: 8px; }
     .legend-item { font-size: 12px; }
     .import-textarea { font-size: 14px; line-height: 1.6; }
