@@ -491,6 +491,14 @@ const cam={x:0,y:0,z:1};
 function sendCam(){window.parent.postMessage({type:'cam',cam:{x:cam.x,y:cam.y,zoom:cam.z}},'*');}
 function applyTransform(){
   wr.style.transform='translate3d('+Math.round(cam.x)+'px,'+Math.round(cam.y)+'px,0) scale('+cam.z+')';
+  // Keep action buttons visible when zoomed out by counter-scaling them
+  try{
+    const btnScale = Math.max(1, 1 / cam.z);
+    for(const a of nl.querySelectorAll('.node-actions')){
+      a.style.transformOrigin = 'center center';
+      a.style.transform = 'scale('+btnScale+')';
+    }
+  }catch(e){}
   sendCam();
 }
 if(INIT_CAM){cam.x=INIT_CAM.x;cam.y=INIT_CAM.y;cam.z=INIT_CAM.zoom;applyTransform();}
