@@ -305,6 +305,24 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 
     :root { --panel-w: 100vw; }
 
+    /* Larger touch targets and readable text for tablet/mobile */
+    html, body { font-size: 16px; }
+    .header { height: 56px; padding: 0 18px; }
+    .btn-toggle-panel { width: 40px; height: 36px; font-size: 20px; }
+    .panel-head .panel-head-btn, .btn-save, .btn-export, .btn-import {
+        padding: 8px 12px; font-size: 14px; min-height: 40px;
+    }
+    .row-btn { width: 44px; height: 44px; font-size: 14px; }
+    .row-btn.reorder { width: 48px; }
+    .node-label { font-size: 15px; line-height: 40px; }
+    .node-input { font-size: 15px; height: 36px; padding: 4px 6px; }
+    .toggle { width: 20px; height: 20px; font-size: 12px; margin-right: 8px; }
+    .sign-dot { width: 10px; height: 10px; margin-right: 8px; }
+    .legend-item { font-size: 12px; }
+    .import-textarea { font-size: 14px; line-height: 1.6; }
+    .kb { font-size: 12px; padding: 6px 8px; }
+    .panel { touch-action: manipulation; }
+
     .body {
         flex-direction: column;
     }
