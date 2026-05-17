@@ -383,6 +383,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         <span class="header-sep"></span>
         <span class="save-indicator" id="saveIndicator"></span>
         <button class="btn-save" id="btnSave">Save</button>
+        <button class="btn-save" id="btnUndo" disabled>Undo</button>
         <span class="header-hint">Click to select · dbl-click to rename · Tab = child · Enter = sibling</span>
     </header>
 
@@ -519,6 +520,47 @@ const SEED = [
 let root = fromPairs(SEED);
 let sel = null;
 let editing = null;
+
+const UNDO_LIMIT = 30;
+const undoStack = [];
+
+function createNodeWithId(id, name) {
+    const n = { id: typeof id === 'number' ? id : uid++, name, children: [], collapsed: false };
+    if (typeof id === 'number') uid = Math.max(uid, id + 1);
+    return n;
+}
+
+function pushUndoState() {
+    const snapshot = {
+        root: serializeNode(root),
+        uid,
+        sel,
+        autoMap: { ...autoMap },
+        autoIdx,
+    };
+    undoStack.push(snapshot);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    updateUndoButton();
+}
+
+function updateUndoButton() {
+    const btn = document.getElementById('btnUndo');
+    if (!btn) return;
+    btn.disabled = undoStack.length === 0;
+}
+
+function doUndo() {
+    if (undoStack.length === 0) return;
+    const state = undoStack.pop();
+    root = deserializeNode(state.root);
+    uid = state.uid;
+    sel = state.sel;
+    Object.assign(autoMap, state.autoMap || {});
+    autoIdx = state.autoIdx || 0;
+    render();
+    scheduleUpdate();
+    updateUndoButton();
+}
 
 /* ── Tree helpers ── */
 function find(id, n = root) {
@@ -666,6 +708,7 @@ function renderLegend() {
 
 /* ── Mutations ── */
 function addChild(pid) {
+    pushUndoState();
     const p = find(pid);
     const c = mk('New Member');
     p.children.push(c); p.collapsed = false;
@@ -675,6 +718,7 @@ function addChild(pid) {
 
 function addSibling(id) {
     const p = findParent(id); if (!p) return;
+    pushUndoState();
     const idx = p.children.findIndex(c => c.id === id);
     const s = mk('New Member');
     p.children.splice(idx + 1, 0, s);
@@ -684,6 +728,7 @@ function addSibling(id) {
 
 function deleteNode(id) {
     const p = findParent(id); if (!p) return;
+    pushUndoState();
     p.children = p.children.filter(c => c.id !== id);
     sel = p.id; render(); scheduleUpdate();
 }
@@ -693,6 +738,7 @@ function moveSibling(id, dir) {
     const idx = p.children.findIndex(c => c.id === id);
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= p.children.length) return;
+    pushUndoState();
     const tmp = p.children[idx];
     p.children[idx] = p.children[newIdx];
     p.children[newIdx] = tmp;
@@ -708,12 +754,16 @@ function startRename(id) {
     const row = treeEl.querySelector(`[data-id="${id}"]`); if (!row) return;
     const lbl = row.querySelector('.node-label');
     const node = find(id);
+    const oldName = node.name;
     const inp = document.createElement('input');
     inp.className = 'node-input'; inp.value = node.name; inp.spellcheck = false;
     lbl.replaceWith(inp); inp.focus(); inp.select();
     function commit() {
         const v = inp.value.trim();
-        if (v) node.name = v;
+        if (v && v !== oldName) {
+            pushUndoState();
+            node.name = v;
+        }
         editing = null; render(); scheduleUpdate();
     }
     inp.addEventListener('blur', commit);
@@ -726,6 +776,10 @@ function startRename(id) {
 /* ── Keyboard shortcuts ── */
 document.addEventListener('keydown', e => {
     if (editing !== null) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); doUndo();
+        return;
+    }
     if (!sel) return;
     if (e.key === 'Tab') { e.preventDefault(); addChild(sel); }
     else if (e.key === 'Enter') { e.preventDefault(); const p = findParent(sel); if (p) addSibling(sel); else addChild(sel); }
@@ -758,8 +812,8 @@ document.addEventListener('keydown', e => {
 
 /* ── Expand / Collapse all ── */
 function setAll(n, v) { n.collapsed = v; for (const c of n.children) setAll(c, v); }
-document.getElementById('btnExp').addEventListener('click', () => { setAll(root, false); render(); });
-document.getElementById('btnCol').addEventListener('click', () => { for (const c of root.children) setAll(c, true); render(); });
+document.getElementById('btnExp').addEventListener('click', () => { pushUndoState(); setAll(root, false); render(); });
+document.getElementById('btnCol').addEventListener('click', () => { pushUndoState(); for (const c of root.children) setAll(c, true); render(); });
 
 /* ── Panel toggle ── */
 const panelEl = document.getElementById('panel');
@@ -1059,7 +1113,7 @@ const SAVE_KEY = 'cult_chart_v1';
 
 function saveToStorage() {
     try {
-        const data = { tree: serializeNode(root), autoMap: { ...autoMap }, autoIdx };
+        const data = { tree: serializeNode(root), autoMap: { ...autoMap }, autoIdx, uid };
         localStorage.setItem(SAVE_KEY, JSON.stringify(data));
         return true;
     } catch (e) { return false; }
@@ -1070,6 +1124,7 @@ function loadFromStorage() {
         const raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return false;
         const data = JSON.parse(raw);
+        if (typeof data.uid === 'number') uid = data.uid;
         root = deserializeNode(data.tree);
         Object.assign(autoMap, data.autoMap || {});
         autoIdx = data.autoIdx || 0;
@@ -1078,11 +1133,11 @@ function loadFromStorage() {
 }
 
 function serializeNode(n) {
-    return { name: n.name, collapsed: n.collapsed, children: n.children.map(serializeNode) };
+    return { id: n.id, name: n.name, collapsed: n.collapsed, children: n.children.map(serializeNode) };
 }
 
 function deserializeNode(d) {
-    const n = mk(d.name);
+    const n = createNodeWithId(d.id, d.name);
     n.collapsed = d.collapsed || false;
     n.children = (d.children || []).map(deserializeNode);
     return n;
@@ -1091,6 +1146,9 @@ function deserializeNode(d) {
 let hasUnsaved = false;
 const saveIndicator = document.getElementById('saveIndicator');
 const btnSave = document.getElementById('btnSave');
+const btnUndo = document.getElementById('btnUndo');
+
+btnUndo.addEventListener('click', () => doUndo());
 
 function markUnsaved() {
     hasUnsaved = true;
@@ -1181,6 +1239,7 @@ importInput.addEventListener('input', () => {
 btnImport.addEventListener('click', () => {
     const pairs = parseIndented(importInput.value.trim());
     if (!pairs.length) return;
+    pushUndoState();
     root = fromPairs(pairs);
     sel = null;
     importInput.value = '';
@@ -1200,6 +1259,7 @@ scheduleUpdate();
 hasUnsaved = false;
 saveIndicator.classList.remove('visible');
 btnSave.textContent = 'Save';
+updateUndoButton();
 </script>
 </body>
 </html>
