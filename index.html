@@ -3,1157 +3,839 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Scalable Organizational Chart</title>
-
+<title>Cult Chart Editor</title>
 <style>
-/* =============================================================================
-   GLOBAL / VIEWPORT
-============================================================================= */
 
-* {
-    box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Cinzel:wght@400;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:      #0e0c0a;
+    --surface: #131110;
+    --panel:   #181512;
+    --border:  #2a2420;
+    --border2: #4a4038;
+    --accent:  #d4a84c;
+    --accent2: #8c6c3e;
+    --text:    #e8dfd0;
+    --muted:   #a09080;
+    --dim:     #7a6a5a;
+    --hover:   rgba(212,168,76,0.07);
+    --sel:     rgba(212,168,76,0.16);
+    --mono:    'Courier Prime', monospace;
+    --head:    'Cinzel', Georgia, serif;
+    --panel-w: 360px;
 }
 
-html,
-body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-
-    background: #eef3fb;
-
-    font-family: Arial, sans-serif;
-
-    user-select: none;
-    -webkit-user-select: none;
-
-    /*
-        Improves text rendering during transforms.
-    */
-    text-rendering: geometricPrecision;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+html, body {
+    height: 100%; background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 14px; overflow: hidden;
 }
 
-/*
-    The visible camera viewport.
+/* ── Shell ── */
+.shell { display: flex; flex-direction: column; height: 100vh; }
 
-    IMPORTANT:
-    The chart itself never changes layout during zoom.
-    We only move/scale the world layer.
-*/
-
-#scene {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-
-    cursor: grab;
-    touch-action: pinch-zoom;
+.header {
+    flex-shrink: 0; display: flex; align-items: center;
+    padding: 0 16px; height: 46px;
+    border-bottom: 1px solid var(--border); background: var(--surface); gap: 12px;
+    z-index: 10;
 }
 
-#scene.dragging {
-    cursor: grabbing;
+.header h1 {
+    font-family: var(--head); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; white-space: nowrap;
 }
 
-/* =============================================================================
-   WORLD LAYER
-============================================================================= */
+.header-sep { flex: 1; }
 
-/*
-    This is the ENTIRE chart world.
+.header-hint { font-size: 11px; color: var(--dim); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    We zoom/pan ONLY this layer.
+/* panel toggle button */
+.btn-toggle-panel {
+    flex-shrink: 0; background: none; border: 1px solid var(--border2);
+    color: var(--muted); font-family: var(--mono); font-size: 18px; line-height: 1;
+    width: 32px; height: 28px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: color 0.15s, border-color 0.15s;
+    border-radius: 2px;
+}
+.btn-toggle-panel:hover { color: var(--accent); border-color: var(--accent2); }
 
-    We do NOT:
-        - resize nodes
-        - recompute spacing
-        - scale text independently
-
-    That keeps geometry stable and prevents overlap bugs.
-*/
-
-#world {
-    position: absolute;
-    left: 0;
-    top: 0;
-
-    transform-origin: 0 0;
-
-    will-change: transform;
-
-    /*
-        Helps browsers keep text crisp during transforms.
-    */
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+/* ── Body ── */
+.body {
+    flex: 1; display: flex; overflow: hidden;
+    transition: none;
 }
 
-/* =============================================================================
-   SVG EDGE LAYER
-============================================================================= */
+/* ── Panel ── */
+.panel {
+    flex-shrink: 0; width: var(--panel-w);
+    background: var(--panel); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: width 0.22s ease, opacity 0.22s ease;
+}
 
-svg {
-    position: absolute;
-    inset: 0;
-
-    overflow: visible;
+.panel.collapsed {
+    width: 0 !important;
+    opacity: 0;
     pointer-events: none;
-
-    z-index: 1;
+    border-right: none;
 }
 
-/* =============================================================================
-   NODE LAYER
-============================================================================= */
-
-#nodesLayer {
-    position: absolute;
-    left: 0;
-    top: 0;
-
-    z-index: 2;
+.panel-head {
+    flex-shrink: 0; padding: 9px 14px 7px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 7px;
 }
 
-/* =============================================================================
-   NODE STYLE
-============================================================================= */
-
-.node {
-    position: absolute;
-
-    width: 190px;
-    min-height: 54px;
-
-    padding: 8px 10px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1.15;
-
-    color: white;
-
-    border-radius: 4px;
-    border: 1px solid rgba(0,0,0,0.28);
-
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-
-    transform: translateX(-50%);
-
-    /*
-        Prevents browser subpixel blur accumulation.
-    */
-    contain: layout style paint;
+.panel-head-title {
+    font-family: var(--head); font-size: 9px; letter-spacing: 0.22em;
+    color: var(--muted); text-transform: uppercase; flex: 1;
 }
 
-/* =============================================================================
-   SIGN COLORS
-============================================================================= */
+.panel-head-btn {
+    background: none; border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    padding: 3px 8px; cursor: pointer; white-space: nowrap;
+    transition: color 0.1s, border-color 0.1s; touch-action: manipulation;
+}
+.panel-head-btn:hover { color: var(--accent); border-color: var(--accent2); }
 
-.Founding   { background: #6c757d; }
-.Starbender { background: #3b82f6; }
-.Veilcross  { background: #8b5cf6; }
-.Hollowmark { background: #9ca3af; }
-.Greythorne { background: #14b8a6; }
-.Ashenfold  { background: #a855f7; }
-.Duskhollow { background: #64748b; }
-.Thornveil  { background: #22c55e; }
-.Wychstone  { background: #ef4444; }
-.Sablerune  { background: #f97316; }
-.Marrowfen  { background: #a16207; }
-.Emberlace  { background: #fb923c; }
-.Pyrelace   { background: #f87171; }
+/* ── Tree scroll ── */
+.tree-scroll {
+    flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 60px;
+    -webkit-overflow-scrolling: touch;
+}
+.tree-scroll::-webkit-scrollbar { width: 3px; }
+.tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Node row ── */
+.tree-row {
+    display: flex; align-items: center;
+    min-height: 36px; /* taller for touch */
+    padding-right: 4px; cursor: pointer; position: relative;
+}
+.tree-row:hover { background: var(--hover); }
+.tree-row.selected { background: var(--sel); }
+
+/* guide lines */
+.vline { flex-shrink: 0; width: 20px; height: 36px; position: relative; }
+.vline.continues::before {
+    content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+    width: 1px; background: var(--border2);
+}
+
+.connector { flex-shrink: 0; width: 20px; height: 36px; position: relative; }
+.connector::before {
+    content: ''; position: absolute; left: 10px; top: 0; height: 18px;
+    width: 1px; background: var(--border2);
+}
+.connector::after {
+    content: ''; position: absolute; left: 10px; top: 18px;
+    width: 8px; height: 1px; background: var(--border2);
+}
+.connector.not-last::before { height: 36px; }
+
+/* collapse toggle */
+.toggle {
+    flex-shrink: 0; width: 16px; height: 16px; border: 1px solid var(--border2);
+    color: var(--text); font-size: 9px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; margin-right: 5px;
+    transition: color 0.1s, border-color 0.1s; touch-action: manipulation;
+}
+.toggle:hover { border-color: var(--accent2); color: var(--accent); }
+.toggle.leaf { border-color: transparent; color: var(--muted); cursor: default; }
+
+/* sign dot */
+.sign-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
+
+/* label */
+.node-label {
+    flex: 1; min-width: 0; font-size: 13px; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 36px; letter-spacing: 0.01em;
+}
+.node-label.root-lbl { color: var(--accent); font-weight: 700; }
+
+/* rename input */
+.node-input {
+    flex: 1; min-width: 0; background: rgba(0,0,0,0.35); border: none;
+    border-bottom: 1px solid var(--accent2); color: var(--text);
+    font-family: var(--mono); font-size: 13px; padding: 0 2px;
+    outline: none; letter-spacing: 0.01em; height: 28px;
+}
+
+/* action buttons — always visible on touch devices, hover-only on pointer devices */
+.row-actions { display: flex; gap: 0; flex-shrink: 0; margin-left: 2px; opacity: 0; transition: opacity 0.1s; }
+.tree-row:hover .row-actions,
+.tree-row.selected .row-actions { opacity: 1; }
+
+/* on touch, always show */
+@media (hover: none) {
+    .row-actions { opacity: 1; }
+}
+
+.row-btn {
+    background: none; border: none; color: var(--muted); font-size: 13px;
+    width: 26px; height: 36px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: color 0.1s, background 0.1s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.row-btn:hover,
+.row-btn:active { color: var(--accent); background: rgba(212,168,76,0.1); }
+.row-btn.del:hover,
+.row-btn.del:active { color: #d07070; background: rgba(208,112,112,0.1); }
+
+/* reorder arrows — subtle */
+.row-btn.reorder { font-size: 11px; color: var(--dim); }
+.row-btn.reorder:hover,
+.row-btn.reorder:active { color: var(--accent); background: rgba(212,168,76,0.1); }
+.row-btn.reorder.disabled { opacity: 0; pointer-events: none; }
+
+/* ── Legend ── */
+.legend {
+    flex-shrink: 0; padding: 7px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 4px 11px;
+    max-height: 80px; overflow-y: auto;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text); }
+.legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── Footer ── */
+.panel-foot {
+    flex-shrink: 0; padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+}
+.status { flex: 1; font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+
+.btn-export {
+    background: none; border: 1px solid var(--accent2); color: var(--accent);
+    font-family: var(--head); font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 6px 14px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; white-space: nowrap;
+    touch-action: manipulation;
+}
+.btn-export:hover { border-color: var(--accent); background: rgba(201,168,76,0.07); }
+
+/* ── Preview ── */
+.preview { flex: 1; background: #eef3fb; position: relative; overflow: hidden; min-width: 0; }
+iframe { width: 100%; height: 100%; border: none; display: block; }
+
+.preview-tag {
+    position: absolute; top: 10px; right: 14px;
+    font-family: var(--head); font-size: 9px; letter-spacing: 0.2em;
+    color: rgba(0,0,0,0.18); text-transform: uppercase; pointer-events: none;
+}
+
+.kb-bar {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; pointer-events: none; white-space: nowrap;
+}
+.kb {
+    font-family: var(--mono); font-size: 10px; color: rgba(0,0,0,0.28);
+    background: rgba(255,255,255,0.55); padding: 3px 7px; border-radius: 3px;
+}
+
+/* ── Save button + indicator ── */
+.btn-save {
+    flex-shrink: 0; background: none; border: 1px solid var(--accent2);
+    color: var(--accent); font-family: var(--head); font-size: 10px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 4px 14px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+    touch-action: manipulation;
+}
+.btn-save:hover { background: rgba(212,168,76,0.1); border-color: var(--accent); }
+.btn-save.saved { color: var(--muted); border-color: var(--border2); pointer-events: none; }
+
+.save-indicator {
+    font-size: 11px; color: var(--accent); letter-spacing: 0.05em;
+    white-space: nowrap; opacity: 0; transition: opacity 0.3s;
+}
+.save-indicator.visible { opacity: 1; }
+
+
+@media (max-width: 700px) {
+    :root { --panel-w: 100vw; }
+
+    .body { flex-direction: column; }
+
+    .panel {
+        width: 100% !important;
+        height: 52vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        transition: height 0.22s ease, opacity 0.22s ease;
+    }
+
+    .panel.collapsed {
+        width: 100% !important;
+        height: 0 !important;
+        opacity: 0;
+        border-bottom: none;
+    }
+
+    .preview { min-height: 0; }
+
+    /* hide keyboard hints on mobile */
+    .kb-bar { display: none; }
+
+    .header-hint { display: none; }
+}
 
 </style>
 </head>
-
 <body>
 
-<div id="scene">
+<div class="shell">
 
-    <div id="world">
+    <header class="header">
+        <button class="btn-toggle-panel" id="btnToggle" title="Toggle editor">☰</button>
+        <h1>Cult Chart Editor</h1>
+        <span class="header-sep"></span>
+        <span class="save-indicator" id="saveIndicator"></span>
+        <button class="btn-save" id="btnSave">Save</button>
+        <span class="header-hint">Click to select · dbl-click to rename · Tab = child · Enter = sibling</span>
+    </header>
 
-        <svg id="edges"></svg>
+    <div class="body">
 
-        <div id="nodesLayer"></div>
+        <div class="panel" id="panel">
+            <div class="panel-head">
+                <span class="panel-head-title">Members</span>
+                <button class="panel-head-btn" id="btnExp">Expand</button>
+                <button class="panel-head-btn" id="btnCol">Collapse</button>
+            </div>
+            <div class="tree-scroll" id="treeRoot"></div>
+            <div class="legend" id="legend"></div>
+            <div class="panel-foot">
+                <span class="status" id="status"></span>
+                <button class="btn-export" id="btnCopy">Copy array</button>
+            </div>
+        </div>
+
+        <div class="preview">
+            <iframe id="preview" title="Chart Preview"></iframe>
+            <div class="preview-tag">Live Preview</div>
+            <div class="kb-bar">
+                <span class="kb">Enter — sibling</span>
+                <span class="kb">Tab — child</span>
+                <span class="kb">F2 — rename</span>
+                <span class="kb">↑↓ — navigate</span>
+                <span class="kb">Del — delete</span>
+            </div>
+        </div>
 
     </div>
-
 </div>
 
 <script>
-
-/* =============================================================================
-   IMPORTANT ARCHITECTURE NOTES
-===============================================================================
-
-THIS FILE IS DESIGNED FOR HEAVY ITERATION.
-
-You can continuously:
-    - add nodes
-    - remove nodes
-    - reorganize hierarchy
-    - expand the chart
-
-WITHOUT changing layout code.
-
-===============================================================================
-HOW TO EDIT THE CHART
-===============================================================================
-
-ONLY edit the relationships array below.
-
-Every entry is:
-
-    ["Parent Name", "Child Name"]
-
-Example:
-
-    ["Alice", "Bob"]
-
-means:
-
-    Alice
-      ↓
-      Bob
-
-===============================================================================
-WHY THIS APPROACH WORKS
-===============================================================================
-
-Earlier failed approaches:
-    - manually positioned boxes
-    - independently routed edges
-    - dynamically searched for paths
-
-That caused:
-    - overlapping lines
-    - fake relationships
-    - broken routing
-    - unstable scaling
-
-THIS implementation instead:
-
-    1. Builds a true hierarchy tree
-    2. Computes recursive layout
-    3. Centers parents over descendants
-    4. Draws shared connector buses
-    5. Uses a camera transform for zoom/pan
-
-That architecture scales cleanly.
-
-===============================================================================
-CRITICAL DESIGN RULE
-===============================================================================
-
-THE WORLD NEVER RESCALES ITS INTERNAL LAYOUT.
-
-Zoom only changes the CAMERA.
-
-That means:
-    - node spacing remains stable
-    - text remains crisp
-    - routing remains correct
-    - geometry never collapses
-
-===============================================================================
-*/
-
-
-/* =============================================================================
-   RELATIONSHIP DATA
-============================================================================= */
-
-const relationships = [
-
-["Founding Father","Starbender Aerion"],
-["Founding Father","Veilcross Hadrien"],
-["Founding Father","Hollowmark Ennis"],
-
-["Starbender Aerion","Starbender Calliothene"],
-["Starbender Aerion","Starbender Tarn"],
-
-["Veilcross Hadrien","Veilcross Ilm"],
-["Veilcross Hadrien","Veilcross Joren"],
-
-["Starbender Calliothene","Greythorne Sael"],
-["Starbender Calliothene","Greythorne Eirevann"],
-["Starbender Calliothene","Greythorne Talin"],
-
-["Starbender Tarn","Starbender Korin"],
-["Starbender Tarn","Starbender Duvaine"],
-["Starbender Tarn","Starbender Oren"],
-
-["Veilcross Ilm","Veilcross Pell"],
-["Veilcross Ilm","Veilcross Oranthas"],
-
-["Veilcross Joren","Veilcross Sora"],
-
-["Greythorne Sael","Greythorne Una"],
-["Greythorne Sael","Greythorne Veor"],
-["Greythorne Sael","Greythorne Velindra"],
-
-["Greythorne Eirevann","Ashenfold Thrennovael"],
-
-["Starbender Korin","Starbender Zev"],
-["Starbender Korin","Starbender Orvanthis"],
-
-["Starbender Duvaine","Duskhollow Caleo"],
-
-["Starbender Oren","Starbender Isolvar"],
-
-["Veilcross Pell","Veilcross Emrethis"],
-["Veilcross Pell","Veilcross Faro"],
-
-["Veilcross Oranthas","Thornveil Gend"],
-["Veilcross Oranthas","Thornveil Hesper"],
-["Veilcross Oranthas","Thornveil Iro"],
-
-["Veilcross Sora","Veilcross Aemorrhis"],
-["Veilcross Sora","Veilcross Jorah"],
-
-["Greythorne Talin","Greythorne Lir"],
-
-["Greythorne Una","Greythorne Mei"],
-
-["Greythorne Velindra","Wychstone Noor"],
-
-["Ashenfold Thrennovael","Sablerune Oris"],
-["Ashenfold Thrennovael","Sablerune Renn"],
-
-["Starbender Zev","Starbender Quill"],
-
-["Starbender Orvanthis","Marrowfen Rann"],
-["Starbender Orvanthis","Marrowfen Saris"],
-
-["Duskhollow Caleo","Duskhollow Ula"],
-
-["Veilcross Emrethis","Emberlace Vren"],
-["Veilcross Emrethis","Emberlace Wyl"],
-
-["Thornveil Iro","Thornveil Xeph"],
-
-["Veilcross Aemorrhis","Pyrelace Yorrin"],
-["Veilcross Aemorrhis","Pyrelace Zera"],
-
-["Marrowfen Saris","Marrowfen Sera"]
-
-];
-
-
-/* =============================================================================
-   CONSTANTS
-============================================================================= */
-
-const CONFIG = {
-
-    nodeWidth: 190,
-    nodeHeight: 54,
-
-    /*
-        More spacing = cleaner chart.
-
-        Increase these safely as the org grows.
-    */
-
-    xGap: 280,
-    yGap: 180,
-
-    paddingX: 120,
-    paddingY: 80,
-
-    busGap: 24,
-
-    minZoom: 0.25,
-    maxZoom: 2.5
-};
-
-
-/* =============================================================================
-   DOM REFERENCES
-============================================================================= */
-
-const scene = document.getElementById("scene");
-const world = document.getElementById("world");
-const svg = document.getElementById("edges");
-const nodesLayer = document.getElementById("nodesLayer");
-
-
-/* =============================================================================
-   TREE BUILDING
-============================================================================= */
-
-const children = new Map();
-const parentOf = new Map();
-const allNodes = new Set();
-
-for (const [parent, child] of relationships) {
-
-    allNodes.add(parent);
-    allNodes.add(child);
-
-    parentOf.set(child, parent);
-
-    if (!children.has(parent)) {
-        children.set(parent, []);
+/* ── Data model ── */
+let uid = 1;
+function mk(name) { return { id: uid++, name, children: [], collapsed: false }; }
+
+function fromPairs(pairs) {
+    const map = {}, childSet = new Set();
+    for (const [p, c] of pairs) {
+        if (!map[p]) map[p] = mk(p);
+        if (!map[c]) map[c] = mk(c);
+        map[p].children.push(map[c]);
+        childSet.add(c);
     }
-
-    children.get(parent).push(child);
+    const rootName = Object.keys(map).find(n => !childSet.has(n));
+    return map[rootName];
 }
 
-/*
-    Root node = node with no parent.
+function toRelationships(node, out = []) {
+    for (const c of node.children) { out.push([node.name, c.name]); toRelationships(c, out); }
+    return out;
+}
+
+/* ── Sign → color ──
+   SIGNS: hardcoded palette for known signs.
+   autoMap: session-assigned colors for new signs.
+   Both are merged into allColors() for chart injection.
 */
+const SIGNS = {
+    Founding:'#6c757d', Starbender:'#3b82f6', Veilcross:'#8b5cf6',
+    Hollowmark:'#9ca3af', Greythorne:'#14b8a6', Ashenfold:'#a855f7',
+    Duskhollow:'#64748b', Thornveil:'#22c55e', Wychstone:'#ef4444',
+    Sablerune:'#f97316', Marrowfen:'#a16207', Emberlace:'#fb923c', Pyrelace:'#f87171',
+};
+const AUTO_PAL = [
+    '#06b6d4','#ec4899','#84cc16','#f59e0b',
+    '#6366f1','#10b981','#f43f5e','#0ea5e9',
+    '#d946ef','#16a34a','#dc2626','#7c3aed',
+];
+const autoMap = {}; let autoIdx = 0;
 
-const root = [...allNodes].find(node => !parentOf.has(node));
+function signOf(name) {
+    if (name === 'Founding Father') return 'Founding';
+    return name.split(' ')[0];
+}
 
+function color(name) {
+    const s = signOf(name);
+    if (SIGNS[s]) return SIGNS[s];
+    if (!autoMap[s]) autoMap[s] = AUTO_PAL[autoIdx++ % AUTO_PAL.length];
+    return autoMap[s];
+}
 
-/* =============================================================================
-   TREE LAYOUT
-===============================================================================
+// Returns merged color map for all signs currently in the tree
+function allColorMap() {
+    const map = { ...SIGNS };
+    Object.assign(map, autoMap);
+    return map;
+}
 
-Recursive tidy-tree style layout.
+/* ── Seed data ── */
+const SEED = [
+    ["Founding Father","Starbender Aerion"],["Founding Father","Veilcross Hadrien"],["Founding Father","Hollowmark Ennis"],
+    ["Starbender Aerion","Starbender Calliothene"],["Starbender Aerion","Starbender Tarn"],
+    ["Veilcross Hadrien","Veilcross Ilm"],["Veilcross Hadrien","Veilcross Joren"],
+    ["Starbender Calliothene","Greythorne Sael"],["Starbender Calliothene","Greythorne Eirevann"],["Starbender Calliothene","Greythorne Talin"],
+    ["Starbender Tarn","Starbender Korin"],["Starbender Tarn","Starbender Duvaine"],["Starbender Tarn","Starbender Oren"],
+    ["Veilcross Ilm","Veilcross Pell"],["Veilcross Ilm","Veilcross Oranthas"],
+    ["Veilcross Joren","Veilcross Sora"],
+    ["Greythorne Sael","Greythorne Una"],["Greythorne Sael","Greythorne Veor"],["Greythorne Sael","Greythorne Velindra"],
+    ["Greythorne Eirevann","Ashenfold Thrennovael"],
+    ["Starbender Korin","Starbender Zev"],["Starbender Korin","Starbender Orvanthis"],
+    ["Starbender Duvaine","Duskhollow Caleo"],["Starbender Oren","Starbender Isolvar"],
+    ["Veilcross Pell","Veilcross Emrethis"],["Veilcross Pell","Veilcross Faro"],
+    ["Veilcross Oranthas","Thornveil Gend"],["Veilcross Oranthas","Thornveil Hesper"],["Veilcross Oranthas","Thornveil Iro"],
+    ["Veilcross Sora","Veilcross Aemorrhis"],["Veilcross Sora","Veilcross Jorah"],
+    ["Greythorne Talin","Greythorne Lir"],["Greythorne Una","Greythorne Mei"],["Greythorne Velindra","Wychstone Noor"],
+    ["Ashenfold Thrennovael","Sablerune Oris"],["Ashenfold Thrennovael","Sablerune Renn"],
+    ["Starbender Zev","Starbender Quill"],
+    ["Starbender Orvanthis","Marrowfen Rann"],["Starbender Orvanthis","Marrowfen Saris"],
+    ["Duskhollow Caleo","Duskhollow Ula"],
+    ["Veilcross Emrethis","Emberlace Vren"],["Veilcross Emrethis","Emberlace Wyl"],
+    ["Thornveil Iro","Thornveil Xeph"],
+    ["Veilcross Aemorrhis","Pyrelace Yorrin"],["Veilcross Aemorrhis","Pyrelace Zera"],
+    ["Marrowfen Saris","Marrowfen Sera"],
+];
 
-RULES:
-    - leaves get sequential x slots
-    - parents center over descendants
+let root = fromPairs(SEED);
+let sel = null;
+let editing = null;
 
-This creates stable readable hierarchy geometry.
+/* ── Tree helpers ── */
+function find(id, n = root) {
+    if (n.id === id) return n;
+    for (const c of n.children) { const r = find(id, c); if (r) return r; }
+    return null;
+}
+function findParent(id, n = root, p = null) {
+    if (n.id === id) return p;
+    for (const c of n.children) { const r = findParent(id, c, n); if (r !== undefined) return r; }
+    return undefined;
+}
+function flatVisible(n = root, out = []) {
+    out.push(n);
+    if (!n.collapsed) for (const c of n.children) flatVisible(c, out);
+    return out;
+}
+function countAll(n) { let t = 1; for (const c of n.children) t += countAll(c); return t; }
 
-============================================================================= */
+/* ── Render ── */
+const treeEl  = document.getElementById('treeRoot');
+const statusEl = document.getElementById('status');
+const legendEl = document.getElementById('legend');
 
-const positions = new Map();
+function render() {
+    treeEl.innerHTML = '';
+    renderNode(root, [], true);
+    renderLegend();
+    statusEl.textContent = `${countAll(root) - 1} members · ${toRelationships(root).length} relationships`;
+}
 
-let leafIndex = 0;
+function renderNode(node, parentBits, isLast) {
+    const row = document.createElement('div');
+    row.className = 'tree-row' + (node.id === sel ? ' selected' : '');
+    row.dataset.id = node.id;
 
-function layout(node, depth) {
+    const depth = parentBits.length;
 
-    const kids = children.get(node) || [];
-
-    if (kids.length === 0) {
-
-        positions.set(node, {
-            x: leafIndex++,
-            y: depth
-        });
-
-        return;
+    if (depth === 0) {
+        const sp = document.createElement('div');
+        sp.style.cssText = 'flex-shrink:0;width:8px;';
+        row.appendChild(sp);
+    } else {
+        for (let i = 0; i < depth - 1; i++) {
+            const vl = document.createElement('div');
+            vl.className = 'vline' + (parentBits[i] ? ' continues' : '');
+            row.appendChild(vl);
+        }
+        const conn = document.createElement('div');
+        conn.className = 'connector' + (isLast ? '' : ' not-last');
+        row.appendChild(conn);
     }
 
-    const start = leafIndex;
+    // toggle
+    const tog = document.createElement('div');
+    tog.className = 'toggle' + (node.children.length === 0 ? ' leaf' : '');
+    tog.textContent = node.children.length === 0 ? '·' : (node.collapsed ? '+' : '−');
+    tog.addEventListener('click', e => {
+        e.stopPropagation();
+        if (node.children.length) { node.collapsed = !node.collapsed; render(); }
+    });
+    row.appendChild(tog);
 
-    for (const child of kids) {
-        layout(child, depth + 1);
+    // dot
+    const dot = document.createElement('div');
+    dot.className = 'sign-dot';
+    dot.style.background = color(node.name);
+    row.appendChild(dot);
+
+    // label
+    const lbl = document.createElement('div');
+    lbl.className = 'node-label' + (depth === 0 ? ' root-lbl' : '');
+    lbl.textContent = node.name;
+    row.appendChild(lbl);
+
+    // actions
+    const acts = document.createElement('div');
+    acts.className = 'row-actions';
+
+    // reorder up/down — only for non-root
+    if (depth > 0) {
+        const parent = findParent(node.id);
+        const idx = parent ? parent.children.findIndex(c => c.id === node.id) : -1;
+        const isFirst = idx === 0;
+        const isLastSib = parent ? idx === parent.children.length - 1 : true;
+
+        const bUp = mkBtn('▲', 'Move up', () => moveSibling(node.id, -1));
+        bUp.classList.add('reorder');
+        if (isFirst) bUp.classList.add('disabled');
+        acts.appendChild(bUp);
+
+        const bDn = mkBtn('▼', 'Move down', () => moveSibling(node.id, 1));
+        bDn.classList.add('reorder');
+        if (isLastSib) bDn.classList.add('disabled');
+        acts.appendChild(bDn);
     }
 
-    const end = leafIndex - 1;
+    if (depth > 0) acts.appendChild(mkBtn('↔', 'Add sibling', () => addSibling(node.id)));
+    acts.appendChild(mkBtn('+', 'Add child (Tab)', () => addChild(node.id)));
+    acts.appendChild(mkBtn('✎', 'Rename (F2)', () => startRename(node.id)));
+    if (depth > 0) {
+        const bd = mkBtn('×', 'Delete', () => deleteNode(node.id));
+        bd.classList.add('del');
+        acts.appendChild(bd);
+    }
 
-    positions.set(node, {
-        x: (start + end) / 2,
-        y: depth
+    row.appendChild(acts);
+
+    row.addEventListener('click', () => { sel = node.id; render(); });
+    row.addEventListener('dblclick', e => { e.stopPropagation(); startRename(node.id); });
+    treeEl.appendChild(row);
+
+    if (!node.collapsed) {
+        for (let i = 0; i < node.children.length; i++) {
+            const last = i === node.children.length - 1;
+            renderNode(node.children[i], [...parentBits, !last], last);
+        }
+    }
+}
+
+function mkBtn(text, title, onClick) {
+    const b = document.createElement('button');
+    b.className = 'row-btn';
+    b.textContent = text; b.title = title;
+    b.addEventListener('click', e => { e.stopPropagation(); onClick(); });
+    return b;
+}
+
+function renderLegend() {
+    legendEl.innerHTML = '';
+    const seen = new Set();
+    function collect(n) {
+        const s = signOf(n.name);
+        if (!seen.has(s)) {
+            seen.add(s);
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            const d = document.createElement('div');
+            d.className = 'legend-dot';
+            d.style.background = color(n.name);
+            const lbl = document.createElement('span');
+            lbl.textContent = s;
+            item.appendChild(d); item.appendChild(lbl);
+            legendEl.appendChild(item);
+        }
+        for (const c of n.children) collect(c);
+    }
+    collect(root);
+}
+
+/* ── Mutations ── */
+function addChild(pid) {
+    const p = find(pid);
+    const c = mk('New Member');
+    p.children.push(c); p.collapsed = false;
+    sel = c.id; render(); scheduleUpdate();
+    requestAnimationFrame(() => startRename(c.id));
+}
+
+function addSibling(id) {
+    const p = findParent(id); if (!p) return;
+    const idx = p.children.findIndex(c => c.id === id);
+    const s = mk('New Member');
+    p.children.splice(idx + 1, 0, s);
+    sel = s.id; render(); scheduleUpdate();
+    requestAnimationFrame(() => startRename(s.id));
+}
+
+function deleteNode(id) {
+    const p = findParent(id); if (!p) return;
+    p.children = p.children.filter(c => c.id !== id);
+    sel = p.id; render(); scheduleUpdate();
+}
+
+function moveSibling(id, dir) {
+    const p = findParent(id); if (!p) return;
+    const idx = p.children.findIndex(c => c.id === id);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= p.children.length) return;
+    // swap
+    const tmp = p.children[idx];
+    p.children[idx] = p.children[newIdx];
+    p.children[newIdx] = tmp;
+    sel = id; render(); scheduleUpdate();
+    // scroll into view
+    requestAnimationFrame(() => {
+        treeEl.querySelector(`[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
     });
 }
 
-layout(root, 0);
-
-
-/* =============================================================================
-   CHART DIMENSIONS
-============================================================================= */
-
-const maxDepth = Math.max(
-    ...[...positions.values()].map(p => p.y)
-);
-
-const chartWidth =
-    CONFIG.paddingX * 2 +
-    Math.max(0, (leafIndex - 1) * CONFIG.xGap) +
-    CONFIG.nodeWidth;
-
-const chartHeight =
-    CONFIG.paddingY * 2 +
-    maxDepth * CONFIG.yGap +
-    CONFIG.nodeHeight;
-
-world.style.width = chartWidth + "px";
-world.style.height = chartHeight + "px";
-
-svg.setAttribute("width", chartWidth);
-svg.setAttribute("height", chartHeight);
-svg.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
-
-
-/* =============================================================================
-   POSITION HELPERS
-============================================================================= */
-
-function xOf(name) {
-    return CONFIG.paddingX +
-           positions.get(name).x * CONFIG.xGap;
-}
-
-function yOf(name) {
-    return CONFIG.paddingY +
-           positions.get(name).y * CONFIG.yGap;
-}
-
-
-/* =============================================================================
-   NODE HELPERS
-============================================================================= */
-
-function signClass(name) {
-
-    if (name === "Founding Father") {
-        return "Founding";
+/* ── Rename ── */
+function startRename(id) {
+    editing = id; sel = id;
+    const row = treeEl.querySelector(`[data-id="${id}"]`); if (!row) return;
+    const lbl = row.querySelector('.node-label');
+    const node = find(id);
+    const inp = document.createElement('input');
+    inp.className = 'node-input'; inp.value = node.name; inp.spellcheck = false;
+    lbl.replaceWith(inp); inp.focus(); inp.select();
+    function commit() {
+        const v = inp.value.trim();
+        if (v) node.name = v;
+        editing = null; render(); scheduleUpdate();
     }
-
-    return name.split(" ")[0];
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commit(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); editing = null; render(); }
+    });
 }
 
-
-/* =============================================================================
-   RENDER NODES
-============================================================================= */
-
-function renderNodes() {
-
-    nodesLayer.innerHTML = "";
-
-    for (const name of allNodes) {
-
-        const node = document.createElement("div");
-
-        node.className =
-            `node ${signClass(name)}`;
-
-        node.textContent = name;
-
-        node.style.left = xOf(name) + "px";
-        node.style.top = yOf(name) + "px";
-
-        nodesLayer.appendChild(node);
+/* ── Keyboard shortcuts ── */
+document.addEventListener('keydown', e => {
+    if (editing !== null) return;
+    if (!sel) return;
+    if (e.key === 'Tab') { e.preventDefault(); addChild(sel); }
+    else if (e.key === 'Enter') { e.preventDefault(); const p = findParent(sel); if (p) addSibling(sel); else addChild(sel); }
+    else if (e.key === 'F2') { e.preventDefault(); startRename(sel); }
+    else if (e.key === 'Delete') { 
+        const parent = findParent(sel);
+        if (parent) { e.preventDefault(); deleteNode(sel); }
     }
-}
-
-
-/* =============================================================================
-   RENDER EDGES
-===============================================================================
-
-KEY IDEA:
-
-Each parent gets ONE shared horizontal bus.
-
-BAD:
-    parent -> child
-    parent -> child
-    parent -> child
-
-GOOD:
-            Parent
-               |
-        ----------------
-        |      |       |
-       C1     C2      C3
-
-This prevents line chaos.
-
-============================================================================= */
-
-function renderEdges() {
-
-    svg.innerHTML = "";
-
-    const grouped = new Map();
-
-    for (const [parent, child] of relationships) {
-
-        if (!grouped.has(parent)) {
-            grouped.set(parent, []);
+    else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.shiftKey) {
+        e.preventDefault();
+        const parent = findParent(sel);
+        if (parent) moveSibling(sel, e.key === 'ArrowUp' ? -1 : 1);
+    }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const flat = flatVisible();
+        const i = flat.findIndex(n => n.id === sel);
+        const next = flat[i + (e.key === 'ArrowDown' ? 1 : -1)];
+        if (next) {
+            sel = next.id; render();
+            requestAnimationFrame(() => treeEl.querySelector(`[data-id="${sel}"]`)?.scrollIntoView({ block: 'nearest' }));
         }
-
-        grouped.get(parent).push(child);
     }
-
-    for (const [parent, kids] of grouped) {
-
-        const px = xOf(parent);
-
-        const pyBottom =
-            yOf(parent) + CONFIG.nodeHeight;
-
-        const busY =
-            pyBottom + CONFIG.busGap;
-
-        const childXs = kids.map(xOf);
-
-        const minX = Math.min(...childXs);
-        const maxX = Math.max(...childXs);
-
-        const g =
-            document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "g"
-            );
-
-        g.setAttribute("stroke", "rgba(70,70,70,0.9)");
-        g.setAttribute("stroke-width", "2");
-        g.setAttribute("fill", "none");
-
-        /*
-            Parent trunk + shared bus.
-        */
-
-        const trunk =
-            document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "path"
-            );
-
-        if (kids.length > 1) {
-
-            trunk.setAttribute(
-                "d",
-                `
-                M ${px} ${pyBottom}
-                V ${busY}
-                H ${minX}
-                H ${maxX}
-                `
-            );
-
-        } else {
-
-            trunk.setAttribute(
-                "d",
-                `
-                M ${px} ${pyBottom}
-                V ${busY}
-                H ${childXs[0]}
-                `
-            );
-        }
-
-        g.appendChild(trunk);
-
-        /*
-            Vertical child drops.
-        */
-
-        for (const child of kids) {
-
-            const cx = xOf(child);
-
-            const cyTop = yOf(child);
-
-            const drop =
-                document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "path"
-                );
-
-            drop.setAttribute(
-                "d",
-                `
-                M ${cx} ${busY}
-                V ${cyTop}
-                `
-            );
-
-            g.appendChild(drop);
-        }
-
-        svg.appendChild(g);
-    }
-}
-
-
-/* =============================================================================
-   INITIAL RENDER
-============================================================================= */
-
-renderNodes();
-renderEdges();
-
-
-/* =============================================================================
-   CAMERA SYSTEM
-===============================================================================
-
-The camera:
-    - pans
-    - zooms
-
-The WORLD never changes internal geometry.
-
-This is the scalable architecture used by:
-    - diagram editors
-    - CAD software
-    - whiteboard tools
-    - graph visualization systems
-
-============================================================================= */
-
-const camera = {
-
-    x: 0,
-    y: 0,
-    zoom: 1
-};
-
-function updateCamera() {
-
-    /*
-        Integer snapping helps keep text sharper.
-    */
-
-    const tx = Math.round(camera.x);
-    const ty = Math.round(camera.y);
-
-    world.style.transform =
-        `translate3d(${tx}px, ${ty}px, 0)
-         scale(${camera.zoom})`;
-}
-
-
-/* =============================================================================
-   CENTER INITIAL VIEW
-============================================================================= */
-
-function centerView() {
-
-    const sceneRect =
-        scene.getBoundingClientRect();
-
-    const rootX = xOf(root);
-
-    camera.zoom = 1;
-
-    camera.x =
-        sceneRect.width / 2 -
-        rootX * camera.zoom;
-
-    camera.y = 40;
-
-    updateCamera();
-}
-
-centerView();
-
-
-/* =============================================================================
-   PANNING
-============================================================================= */
-
-let dragging = false;
-
-let dragStartX = 0;
-let dragStartY = 0;
-
-let startCamX = 0;
-let startCamY = 0;
-
-scene.addEventListener("pointerdown", e => {
-
-    if (e.button !== 0) return;
-
-    dragging = true;
-
-    scene.classList.add("dragging");
-
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-
-    startCamX = camera.x;
-    startCamY = camera.y;
-
-    scene.setPointerCapture(e.pointerId);
 });
 
-scene.addEventListener("pointermove", e => {
+/* ── Expand / Collapse all ── */
+function setAll(n, v) { n.collapsed = v; for (const c of n.children) setAll(c, v); }
+document.getElementById('btnExp').addEventListener('click', () => { setAll(root, false); render(); });
+document.getElementById('btnCol').addEventListener('click', () => { for (const c of root.children) setAll(c, true); render(); });
 
-    if (!dragging) return;
+/* ── Panel toggle ── */
+const panelEl = document.getElementById('panel');
+const btnToggle = document.getElementById('btnToggle');
+let panelOpen = true;
 
-    camera.x =
-        startCamX +
-        (e.clientX - dragStartX);
-
-    camera.y =
-        startCamY +
-        (e.clientY - dragStartY);
-
-    updateCamera();
+btnToggle.addEventListener('click', () => {
+    panelOpen = !panelOpen;
+    panelEl.classList.toggle('collapsed', !panelOpen);
+    btnToggle.style.color = panelOpen ? '' : 'var(--accent)';
 });
 
-function stopDragging() {
+/* ── Preview ── */
+const previewEl = document.getElementById('preview');
+let debounce = null;
 
-    dragging = false;
-
-    scene.classList.remove("dragging");
+function scheduleUpdate() {
+    markUnsaved();
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+        previewEl.srcdoc = buildChart(toRelationships(root));
+    }, 300);
 }
 
-scene.addEventListener("pointerup", stopDragging);
-scene.addEventListener("pointercancel", stopDragging);
+function buildChart(rels) {
+    // Inject ALL known sign colors, including any new ones added this session
+    const colorMap = allColorMap();
+    const colorCSS = Object.entries(colorMap).map(([k, v]) => `.${k}{background:${v}}`).join('');
 
-
-/* =============================================================================
-   STABLE TRACKPAD + MOUSE ZOOM
-===============================================================================
-
-This version properly separates:
-
-    1. Mouse wheel scrolling
-    2. Trackpad pinch/gesture zooming
-
-Why this works better:
-
-Mouse wheels:
-    - large discrete deltas
-    - usually integer values
-    - should zoom in distinct steps
-
-Trackpads:
-    - tiny continuous deltas
-    - often fractional
-    - should feel smooth and damped
-
-The previous implementation incorrectly treated many modern
-mouse wheels as trackpads.
-
-============================================================================= */
-
-scene.addEventListener(
-    "wheel",
-    e => {
-
-        e.preventDefault();
-
-        const rect =
-            scene.getBoundingClientRect();
-
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        const oldZoom = camera.zoom;
-
-        /*
-        ===========================================================================
-        INPUT TYPE DETECTION
-        ===========================================================================
-
-        Trackpads usually produce:
-            - small deltas
-            - fractional values
-            - high frequency
-
-        Mouse wheels usually produce:
-            - larger jumps
-            - integer deltas
-            - stepwise behavior
-        */
-
-        const delta = e.deltaY;
-
-        const hasFractionalDelta =
-            delta % 1 !== 0;
-
-        const isTrackpad =
-            Math.abs(delta) < 40 ||
-            hasFractionalDelta;
-
-        let zoomFactor;
-
-        /*
-        ===========================================================================
-        TRACKPAD ZOOM
-        ===========================================================================
-
-        Smooth continuous scaling.
-        */
-
-        if (isTrackpad) {
-
-            const clampedDelta =
-                Math.max(-20, Math.min(20, delta));
-
-            const sensitivity = 0.004;
-
-            zoomFactor =
-                Math.exp(-clampedDelta * sensitivity);
-
-        }
-
-        /*
-        ===========================================================================
-        MOUSE WHEEL ZOOM
-        ===========================================================================
-
-        Distinct controlled zoom steps.
-
-        Much less sensitive than before.
-        */
-
-        else {
-
-            zoomFactor =
-                delta > 0
-                    ? 1
-                    : 1.5;
-        }
-
-        const newZoom =
-            Math.min(
-                CONFIG.maxZoom,
-                Math.max(
-                    CONFIG.minZoom,
-                    oldZoom * zoomFactor
-                )
-            );
-
-        /*
-        ===========================================================================
-        CURSOR-ANCHORED ZOOM
-        ===========================================================================
-
-        Keeps cursor position stable during zoom.
-        */
-
-        const worldX =
-            (mx - camera.x) / oldZoom;
-
-        const worldY =
-            (my - camera.y) / oldZoom;
-
-        camera.zoom = newZoom;
-
-        camera.x =
-            mx - worldX * newZoom;
-
-        camera.y =
-            my - worldY * newZoom;
-
-        updateCamera();
-    },
-    { passive: false }
-);
-
-   /* =============================================================================
-   TOUCH PAN + PINCH ZOOM
-===============================================================================
-
-Simple mobile/tablet controls:
-
-    - One finger  = pan
-    - Two fingers = pinch zoom
-
-Uses the SAME camera architecture already used by:
-    - mouse drag
-    - wheel zoom
-
-So the chart geometry remains perfectly stable.
-
-============================================================================= */
-
-let pinchStartDistance = 0;
-let pinchStartZoom = 1;
-
-let pinchWorldX = 0;
-let pinchWorldY = 0;
-
-function distanceBetweenTouches(t1, t2) {
-
-    const dx = t2.clientX - t1.clientX;
-    const dy = t2.clientY - t1.clientY;
-
-    return Math.hypot(dx, dy);
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3fb;font-family:Arial,sans-serif;user-select:none;-webkit-user-select:none;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased}
+#scene{position:relative;width:100vw;height:100vh;overflow:hidden;cursor:grab;touch-action:none}
+#scene.dragging{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
+#nodesLayer{position:absolute;left:0;top:0;z-index:2}
+.node{position:absolute;width:190px;min-height:54px;padding:8px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);transform:translateX(-50%);contain:layout style paint}
+${colorCSS}
+</style></head><body>
+<div id="scene"><div id="world"><svg id="edges"></svg><div id="nodesLayer"></div></div></div>
+<script>
+const R=${JSON.stringify(rels)};
+const C={nW:190,nH:54,xG:280,yG:180,pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
+const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
+const ch=new Map(),po=new Map(),an=new Set();
+for(const[p,c]of R){an.add(p);an.add(c);po.set(c,p);if(!ch.has(p))ch.set(p,[]);ch.get(p).push(c);}
+const rt=[...an].find(n=>!po.has(n));
+const ps=new Map();let li=0;
+function lay(n,d){const k=ch.get(n)||[];if(!k.length){ps.set(n,{x:li++,y:d});return;}const s=li;for(const c of k)lay(c,d+1);ps.set(n,{x:(s+li-1)/2,y:d});}
+lay(rt,0);
+const md=Math.max(...[...ps.values()].map(p=>p.y));
+const cw=C.pX*2+Math.max(0,(li-1)*C.xG)+C.nW,ch2=C.pY*2+md*C.yG+C.nH;
+wr.style.width=cw+"px";wr.style.height=ch2+"px";
+sv.setAttribute("width",cw);sv.setAttribute("height",ch2);sv.setAttribute("viewBox","0 0 "+cw+" "+ch2);
+const xOf=n=>C.pX+ps.get(n).x*C.xG;
+const yOf=n=>C.pY+ps.get(n).y*C.yG;
+const sc2=n=>n==="Founding Father"?"Founding":n.split(" ")[0];
+function rN(){nl.innerHTML="";for(const nm of an){const d=document.createElement("div");d.className="node "+sc2(nm);d.textContent=nm;d.style.left=xOf(nm)+"px";d.style.top=yOf(nm)+"px";nl.appendChild(d);}}
+function rE(){sv.innerHTML="";const gm=new Map();for(const[p,c]of R){if(!gm.has(p))gm.set(p,[]);gm.get(p).push(c);}for(const[par,kids]of gm){const px=xOf(par),pb=yOf(par)+C.nH,by=pb+C.bG,xs=kids.map(xOf),mn=Math.min(...xs),mx2=Math.max(...xs);const g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("stroke","rgba(70,70,70,.9)");g.setAttribute("stroke-width","2");g.setAttribute("fill","none");const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",kids.length>1?"M "+px+" "+pb+" V "+by+" H "+mn+" H "+mx2:"M "+px+" "+pb+" V "+by+" H "+xs[0]);g.appendChild(t);for(const c of kids){const cx=xOf(c),cy=yOf(c),dd=document.createElementNS("http://www.w3.org/2000/svg","path");dd.setAttribute("d","M "+cx+" "+by+" V "+cy);g.appendChild(dd);}sv.appendChild(g);}}
+rN();rE();
+const cam={x:0,y:0,z:1};
+function uc(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";}
+function cv(){const r=sc.getBoundingClientRect();cam.z=1;cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;uc();}cv();
+let dr=false,dx=0,dy=0,cx=0,cy=0;
+sc.addEventListener("pointerdown",e=>{if(e.button&&e.button!==0)return;dr=true;sc.classList.add("dragging");dx=e.clientX;dy=e.clientY;cx=cam.x;cy=cam.y;sc.setPointerCapture(e.pointerId);});
+sc.addEventListener("pointermove",e=>{if(!dr)return;cam.x=cx+(e.clientX-dx);cam.y=cy+(e.clientY-dy);uc();});
+function sd(){dr=false;sc.classList.remove("dragging");}
+sc.addEventListener("pointerup",sd);sc.addEventListener("pointercancel",sd);
+sc.addEventListener("wheel",e=>{e.preventDefault();const r=sc.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,oz=cam.z,d=e.deltaY,tp=Math.abs(d)<40||d%1!==0;const zf=tp?Math.exp(-Math.max(-20,Math.min(20,d))*.004):(d>0?1:1.5);const nz=Math.min(C.maxZ,Math.max(C.minZ,oz*zf)),wx=(mx-cam.x)/oz,wy=(my-cam.y)/oz;cam.z=nz;cam.x=mx-wx*nz;cam.y=my-wy*nz;uc();},{passive:false});
+let p0d=0,p0x=0,p0y=0,p0z=1;
+function ptDist(t){return Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);}
+const touches=new Map();
+sc.addEventListener("touchstart",e=>{e.preventDefault();for(const t of e.changedTouches)touches.set(t.identifier,t);if(touches.size===2){const arr=[...touches.values()];p0d=ptDist(arr);p0x=(arr[0].clientX+arr[1].clientX)/2;p0y=(arr[0].clientY+arr[1].clientY)/2;p0z=cam.z;dr=false;}else if(touches.size===1){const t=[...touches.values()][0];dr=true;dx=t.clientX;dy=t.clientY;cx=cam.x;cy=cam.y;}},{passive:false});
+sc.addEventListener("touchmove",e=>{e.preventDefault();for(const t of e.changedTouches)touches.set(t.identifier,t);if(touches.size===2){const arr=[...touches.values()];const dist=ptDist(arr);const cx2=(arr[0].clientX+arr[1].clientX)/2,cy2=(arr[0].clientY+arr[1].clientY)/2;const nz=Math.min(C.maxZ,Math.max(C.minZ,p0z*(dist/p0d)));const r=sc.getBoundingClientRect();const wx=(p0x-r.left-cam.x)/cam.z,wy=(p0y-r.top-cam.y)/cam.z;cam.z=nz;cam.x=(p0x-r.left)-wx*nz+(cx2-p0x);cam.y=(p0y-r.top)-wy*nz+(cy2-p0y);uc();}else if(touches.size===1&&dr){const t=[...touches.values()][0];cam.x=cx+(t.clientX-dx);cam.y=cy+(t.clientY-dy);uc();}},{passive:false});
+sc.addEventListener("touchend",e=>{for(const t of e.changedTouches)touches.delete(t.identifier);if(touches.size<2)dr=false;if(touches.size===1){const t=[...touches.values()][0];dr=true;dx=t.clientX;dy=t.clientY;cx=cam.x;cy=cam.y;}},{passive:false});
+<\/script></body></html>`;
 }
 
-scene.addEventListener(
-    "touchstart",
-    e => {
+/* ── Save / Load ── */
+const SAVE_KEY = 'cult_chart_v1';
 
-        /*
-            Prevent browser page zoom/scroll.
-        */
+function saveToStorage() {
+    try {
+        const data = {
+            tree: serializeNode(root),
+            autoMap: { ...autoMap },
+            autoIdx,
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 
-        e.preventDefault();
+function loadFromStorage() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        root = deserializeNode(data.tree);
+        Object.assign(autoMap, data.autoMap || {});
+        autoIdx = data.autoIdx || 0;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 
-        /*
-        ===========================================================================
-        SINGLE FINGER PAN
-        ===========================================================================
+function serializeNode(n) {
+    return { name: n.name, collapsed: n.collapsed, children: n.children.map(serializeNode) };
+}
 
-        Reuse existing drag system.
-        */
+function deserializeNode(d) {
+    const n = mk(d.name);
+    n.collapsed = d.collapsed || false;
+    n.children = (d.children || []).map(deserializeNode);
+    return n;
+}
 
-        if (e.touches.length === 1) {
+// Unsaved-changes tracking
+let hasUnsaved = false;
+const saveIndicator = document.getElementById('saveIndicator');
+const btnSave = document.getElementById('btnSave');
 
-            const touch = e.touches[0];
+function markUnsaved() {
+    hasUnsaved = true;
+    saveIndicator.textContent = '● unsaved';
+    saveIndicator.classList.add('visible');
+    btnSave.classList.remove('saved');
+    btnSave.textContent = 'Save';
+}
 
-            dragging = true;
+function markSaved() {
+    hasUnsaved = false;
+    saveIndicator.textContent = 'Saved ✓';
+    setTimeout(() => saveIndicator.classList.remove('visible'), 2000);
+    btnSave.textContent = 'Saved';
+    btnSave.classList.add('saved');
+    setTimeout(() => {
+        btnSave.textContent = 'Save';
+        btnSave.classList.remove('saved');
+    }, 2000);
+}
 
-            dragStartX = touch.clientX;
-            dragStartY = touch.clientY;
+btnSave.addEventListener('click', () => {
+    if (saveToStorage()) markSaved();
+});
 
-            startCamX = camera.x;
-            startCamY = camera.y;
-        }
+/* ── Copy array ── */
+document.getElementById('btnCopy').addEventListener('click', () => {
+    const rels = toRelationships(root);
+    const lines = rels.map(([p,c]) => `["${p}","${c}"]`).join(',\n');
+    navigator.clipboard.writeText(`const relationships = [\n${lines}\n];`).then(() => {
+        const b = document.getElementById('btnCopy');
+        const prev = b.textContent; b.textContent = 'Copied ✓';
+        setTimeout(() => b.textContent = prev, 1800);
+    });
+});
 
-        /*
-        ===========================================================================
-        TWO FINGER PINCH
-        ===========================================================================
-
-        Store:
-            - initial pinch distance
-            - initial zoom
-            - world point under pinch center
-        */
-
-        else if (e.touches.length === 2) {
-
-            dragging = false;
-
-            const [t1, t2] = e.touches;
-
-            pinchStartDistance =
-                distanceBetweenTouches(t1, t2);
-
-            pinchStartZoom = camera.zoom;
-
-            const rect =
-                scene.getBoundingClientRect();
-
-            const centerX =
-                (t1.clientX + t2.clientX) / 2 -
-                rect.left;
-
-            const centerY =
-                (t1.clientY + t2.clientY) / 2 -
-                rect.top;
-
-            pinchWorldX =
-                (centerX - camera.x) / camera.zoom;
-
-            pinchWorldY =
-                (centerY - camera.y) / camera.zoom;
-        }
-    },
-    { passive: false }
-);
-
-scene.addEventListener(
-    "touchmove",
-    e => {
-
-        e.preventDefault();
-
-        /*
-        ===========================================================================
-        ONE FINGER PAN
-        ===========================================================================
-
-        */
-
-        if (e.touches.length === 1 && dragging) {
-
-            const touch = e.touches[0];
-
-            camera.x =
-                startCamX +
-                (touch.clientX - dragStartX);
-
-            camera.y =
-                startCamY +
-                (touch.clientY - dragStartY);
-
-            updateCamera();
-        }
-
-        /*
-        ===========================================================================
-        TWO FINGER PINCH ZOOM
-        ===========================================================================
-
-        */
-
-        else if (e.touches.length === 2) {
-
-            const [t1, t2] = e.touches;
-
-            const currentDistance =
-                distanceBetweenTouches(t1, t2);
-
-            const zoomFactor =
-                currentDistance / pinchStartDistance;
-
-            const newZoom =
-                Math.min(
-                    CONFIG.maxZoom,
-                    Math.max(
-                        CONFIG.minZoom,
-                        pinchStartZoom * zoomFactor
-                    )
-                );
-
-            const rect =
-                scene.getBoundingClientRect();
-
-            const centerX =
-                (t1.clientX + t2.clientX) / 2 -
-                rect.left;
-
-            const centerY =
-                (t1.clientY + t2.clientY) / 2 -
-                rect.top;
-
-            camera.zoom = newZoom;
-
-            /*
-                Keep pinch center anchored.
-            */
-
-            camera.x =
-                centerX -
-                pinchWorldX * newZoom;
-
-            camera.y =
-                centerY -
-                pinchWorldY * newZoom;
-
-            updateCamera();
-        }
-    },
-    { passive: false }
-);
-
-scene.addEventListener(
-    "touchend",
-    () => {
-
-        dragging = false;
-    },
-    { passive: false }
-);
-
-scene.addEventListener(
-    "touchcancel",
-    () => {
-
-        dragging = false;
-    },
-    { passive: false }
-);
-
+/* ── Init ── */
+loadFromStorage(); // restore saved tree if present; falls back to SEED-built root if nothing saved
+render();
+scheduleUpdate();
+// After initial load, clear the unsaved marker — nothing has changed yet
+hasUnsaved = false;
+saveIndicator.classList.remove('visible');
+btnSave.textContent = 'Save';
 </script>
 
 </body>
