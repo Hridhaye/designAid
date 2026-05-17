@@ -195,6 +195,21 @@ html, body {
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text); }
 .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
 
+.bottom-tools {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 1200px;
+    opacity: 1;
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+}
+.bottom-tools.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
 .panel-foot {
     flex-shrink: 0; padding: 8px 14px;
     border-top: 1px solid var(--border);
@@ -432,15 +447,17 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                 <span class="panel-head-title">Members</span>
                 <button class="panel-head-btn" id="btnExp">Expand</button>
                 <button class="panel-head-btn" id="btnCol">Collapse</button>
+                <button class="panel-head-btn" id="btnBottom">Hide bottom</button>
             </div>
             <div class="tree-scroll" id="treeRoot"></div>
-            <div class="legend" id="legend"></div>
-            <div class="panel-foot">
-                <span class="status" id="status"></span>
-                <button class="btn-export" id="btnCopy">Copy array</button>
-                <button class="btn-export" id="btnPrintText">Print text</button>
-            </div>
-            <div class="import-section" id="importSection">
+            <div class="bottom-tools" id="bottomTools">
+                <div class="legend" id="legend"></div>
+                <div class="panel-foot">
+                    <span class="status" id="status"></span>
+                    <button class="btn-export" id="btnCopy">Copy array</button>
+                    <button class="btn-export" id="btnPrintText">Print text</button>
+                </div>
+                <div class="import-section" id="importSection">
                 <button class="import-toggle" id="importToggle">
                     <span class="import-toggle-arrow" id="importArrow">▶</span>
                     <span>Paste import</span>
@@ -473,6 +490,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                     </div>
                 </div>
             </div>
+        </div>
         </div>
 
         <div class="preview">
@@ -928,12 +946,25 @@ document.getElementById('btnCol').addEventListener('click', () => { pushUndoStat
 /* ── Panel toggle ── */
 const panelEl = document.getElementById('panel');
 const btnToggle = document.getElementById('btnToggle');
+const bottomTools = document.getElementById('bottomTools');
+const btnBottom = document.getElementById('btnBottom');
 let panelOpen = true;
+let bottomOpen = true;
 
 btnToggle.addEventListener('click', () => {
     panelOpen = !panelOpen;
     panelEl.classList.toggle('collapsed', !panelOpen);
     btnToggle.style.color = panelOpen ? '' : 'var(--accent)';
+});
+
+function setBottomOpen(open) {
+    bottomOpen = open;
+    bottomTools.classList.toggle('collapsed', !open);
+    btnBottom.textContent = open ? 'Hide bottom' : 'Show bottom';
+}
+
+btnBottom.addEventListener('click', () => {
+    setBottomOpen(!bottomOpen);
 });
 
 /* ── Spacing control ── */
@@ -1832,6 +1863,7 @@ document.getElementById('btnPrintText').addEventListener('click', () => {
 
     // Paste into import textarea and open the import pane, then trigger validation
     importInput.value = content;
+    setBottomOpen(true);
     if (!importBody.classList.contains('open')) {
         importBody.classList.add('open');
         importArrow.classList.add('open');
