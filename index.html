@@ -25,7 +25,7 @@
     --sel:     rgba(212,168,76,0.16);
     --mono:    'Courier Prime', monospace;
     --head:    'Cinzel', Georgia, serif;
-    --panel-w: 420px;
+    --panel-w: 360px;
 }
 
 html, body {
@@ -226,26 +226,7 @@ html, body {
     transition: border-color 0.15s, background 0.15s; white-space: nowrap;
     touch-action: manipulation;
 }
-.btn-export:hover { border-color: var(--accent); background: rgba(201,168,76,0.07); }
-
-/* ── Preview ── */
-.preview { flex: 1; background: #eef3fb; position: relative; overflow: hidden; min-width: 0; }
-iframe { width: 100%; height: 100%; border: none; display: block; }
-
-.preview-tag {
-    position: absolute; top: 10px; right: 14px;
-    font-family: var(--head); font-size: 9px; letter-spacing: 0.2em;
-    color: rgba(0,0,0,0.18); text-transform: uppercase; pointer-events: none;
-}
-
-.kb-bar {
-    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 8px; pointer-events: none; white-space: nowrap;
-}
-.kb {
-    font-family: var(--mono); font-size: 10px; color: rgba(0,0,0,0.28);
-    background: rgba(255,255,255,0.55); padding: 3px 7px; border-radius: 3px;
-}
+.btn-export:hover { border-color: var(--accent); background: rgba(212,168,76,0.07); }
 
 /* ── Save button + indicator ── */
 .btn-save {
@@ -320,6 +301,25 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     background: rgba(212,168,76,0.07);
 }
 .btn-import:disabled { opacity: 0.35; cursor: default; }
+
+/* ── Preview ── */
+.preview { flex: 1; background: #eef3fb; position: relative; overflow: hidden; min-width: 0; }
+iframe { width: 100%; height: 100%; border: none; display: block; }
+
+.preview-tag {
+    position: absolute; top: 10px; right: 14px;
+    font-family: var(--head); font-size: 9px; letter-spacing: 0.2em;
+    color: rgba(0,0,0,0.18); text-transform: uppercase; pointer-events: none;
+}
+
+.kb-bar {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; pointer-events: none; white-space: nowrap;
+}
+.kb {
+    font-family: var(--mono); font-size: 10px; color: rgba(0,0,0,0.28);
+    background: rgba(255,255,255,0.55); padding: 3px 7px; border-radius: 3px;
+}
 
 @media (max-width: 700px) {
     :root { --panel-w: 100vw; }
@@ -435,11 +435,7 @@ function toRelationships(node, out = []) {
     return out;
 }
 
-/* ── Sign → color ──
-   SIGNS: hardcoded palette for known signs.
-   autoMap: session-assigned colors for new signs.
-   Both are merged into allColors() for chart injection.
-*/
+/* ── Sign → color ── */
 const SIGNS = {
     Founding:'#6c757d', Starbender:'#3b82f6', Veilcross:'#8b5cf6',
     Hollowmark:'#9ca3af', Greythorne:'#14b8a6', Ashenfold:'#a855f7',
@@ -465,7 +461,6 @@ function color(name) {
     return autoMap[s];
 }
 
-// Returns merged color map for all signs currently in the tree
 function allColorMap() {
     const map = { ...SIGNS };
     Object.assign(map, autoMap);
@@ -681,12 +676,10 @@ function moveSibling(id, dir) {
     const idx = p.children.findIndex(c => c.id === id);
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= p.children.length) return;
-    // swap
     const tmp = p.children[idx];
     p.children[idx] = p.children[newIdx];
     p.children[newIdx] = tmp;
     sel = id; render(); scheduleUpdate();
-    // scroll into view
     requestAnimationFrame(() => {
         treeEl.querySelector(`[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
     });
@@ -769,18 +762,28 @@ btnToggle.addEventListener('click', () => {
 const previewEl = document.getElementById('preview');
 let debounce = null;
 
+// null = no saved state yet, chart will use its own centerView on first load
+let cameraState = null;
+
 function scheduleUpdate() {
     markUnsaved();
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-        previewEl.srcdoc = buildChart(toRelationships(root));
+        previewEl.srcdoc = buildChart(toRelationships(root), cameraState);
     }, 300);
 }
 
-function buildChart(rels) {
-    // Inject ALL known sign colors, including any new ones added this session
+// Receive camera state updates from the iframe via postMessage
+window.addEventListener('message', e => {
+    if (e.data && e.data.type === 'cam') {
+        cameraState = e.data.cam;
+    }
+});
+
+function buildChart(rels, initialCamera) {
     const colorMap = allColorMap();
     const colorCSS = Object.entries(colorMap).map(([k, v]) => `.${k}{background:${v}}`).join('');
+    const camJSON = initialCamera ? JSON.stringify(initialCamera) : 'null';
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -798,6 +801,7 @@ ${colorCSS}
 <div id="scene"><div id="world"><svg id="edges"></svg><div id="nodesLayer"></div></div></div>
 <script>
 const R=${JSON.stringify(rels)};
+const INIT_CAM=${camJSON};
 const C={nW:190,nH:54,xG:280,yG:180,pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
 const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
 const ch=new Map(),po=new Map(),an=new Set();
@@ -817,8 +821,10 @@ function rN(){nl.innerHTML="";for(const nm of an){const d=document.createElement
 function rE(){sv.innerHTML="";const gm=new Map();for(const[p,c]of R){if(!gm.has(p))gm.set(p,[]);gm.get(p).push(c);}for(const[par,kids]of gm){const px=xOf(par),pb=yOf(par)+C.nH,by=pb+C.bG,xs=kids.map(xOf),mn=Math.min(...xs),mx2=Math.max(...xs);const g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("stroke","rgba(70,70,70,.9)");g.setAttribute("stroke-width","2");g.setAttribute("fill","none");const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",kids.length>1?"M "+px+" "+pb+" V "+by+" H "+mn+" H "+mx2:"M "+px+" "+pb+" V "+by+" H "+xs[0]);g.appendChild(t);for(const c of kids){const cx=xOf(c),cy=yOf(c),dd=document.createElementNS("http://www.w3.org/2000/svg","path");dd.setAttribute("d","M "+cx+" "+by+" V "+cy);g.appendChild(dd);}sv.appendChild(g);}}
 rN();rE();
 const cam={x:0,y:0,z:1};
-function uc(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";}
-function cv(){const r=sc.getBoundingClientRect();cam.z=1;cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;uc();}cv();
+function sendCam(){window.parent.postMessage({type:'cam',cam:{x:cam.x,y:cam.y,zoom:cam.z}},'*');}
+function uc(){wr.style.transform="translate3d("+Math.round(cam.x)+"px,"+Math.round(cam.y)+"px,0) scale("+cam.z+")";sendCam();}
+if(INIT_CAM){cam.x=INIT_CAM.x;cam.y=INIT_CAM.y;cam.z=INIT_CAM.zoom;uc();}
+else{const r=sc.getBoundingClientRect();cam.z=1;cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;uc();}
 let dr=false,dx=0,dy=0,cx=0,cy=0;
 sc.addEventListener("pointerdown",e=>{if(e.button&&e.button!==0)return;dr=true;sc.classList.add("dragging");dx=e.clientX;dy=e.clientY;cx=cam.x;cy=cam.y;sc.setPointerCapture(e.pointerId);});
 sc.addEventListener("pointermove",e=>{if(!dr)return;cam.x=cx+(e.clientX-dx);cam.y=cy+(e.clientY-dy);uc();});
@@ -876,7 +882,6 @@ function deserializeNode(d) {
     return n;
 }
 
-// Unsaved-changes tracking
 let hasUnsaved = false;
 const saveIndicator = document.getElementById('saveIndicator');
 const btnSave = document.getElementById('btnSave');
@@ -932,8 +937,7 @@ importToggle.addEventListener('click', () => {
 function parseIndented(text) {
     const lines = text.split('\n');
     const pairs = [];
-    const stack = []; // [{name, depth}]
-    let nodeCount = 0;
+    const stack = [];
 
     for (const raw of lines) {
         if (!raw.trim()) continue;
@@ -951,9 +955,8 @@ function parseIndented(text) {
         while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
         if (stack.length > 0) pairs.push([stack[stack.length - 1].name, name]);
         stack.push({ name, depth });
-        nodeCount++;
     }
-    return { pairs, nodeCount };
+    return pairs;
 }
 
 importInput.addEventListener('input', () => {
@@ -964,7 +967,8 @@ importInput.addEventListener('input', () => {
         btnImport.disabled = true;
         return;
     }
-    const { pairs, nodeCount } = parseIndented(text);
+    const pairs = parseIndented(text);
+    const nodeCount = text.split('\n').filter(l => l.trim()).length;
     if (nodeCount < 2 || pairs.length === 0) {
         importStatus.textContent = 'Need at least 2 indented nodes';
         importStatus.className = 'import-status err';
@@ -977,7 +981,7 @@ importInput.addEventListener('input', () => {
 });
 
 btnImport.addEventListener('click', () => {
-    const { pairs } = parseIndented(importInput.value.trim());
+    const pairs = parseIndented(importInput.value.trim());
     if (!pairs.length) return;
     root = fromPairs(pairs);
     sel = null;
@@ -985,7 +989,6 @@ btnImport.addEventListener('click', () => {
     importStatus.textContent = '—';
     importStatus.className = 'import-status';
     btnImport.disabled = true;
-    // close the import panel
     importBody.classList.remove('open');
     importArrow.classList.remove('open');
     render();
@@ -993,10 +996,9 @@ btnImport.addEventListener('click', () => {
 });
 
 /* ── Init ── */
-loadFromStorage(); // restore saved tree if present; falls back to SEED-built root if nothing saved
+loadFromStorage();
 render();
 scheduleUpdate();
-// After initial load, clear the unsaved marker — nothing has changed yet
 hasUnsaved = false;
 saveIndicator.classList.remove('visible');
 btnSave.textContent = 'Save';
