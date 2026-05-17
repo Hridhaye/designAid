@@ -457,6 +457,22 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                     </div>
                 </div>
             </div>
+            <div class="import-section" id="syncSection">
+                <button class="import-toggle" id="syncToggle">
+                    <span class="import-toggle-arrow" id="syncArrow">▶</span>
+                    <span>Cloud sync (GitHub Gist)</span>
+                </button>
+                <div class="import-body" id="syncBody">
+                    <input id="syncGistId" class="import-textarea" style="height: 38px;" placeholder="Gist ID (required)" />
+                    <input id="syncFileName" class="import-textarea" style="height: 38px;" placeholder="File name in gist (default: cult-chart-save.json)" />
+                    <input id="syncToken" class="import-textarea" style="height: 38px;" type="password" placeholder="GitHub token (gist scope)" />
+                    <div class="import-foot">
+                        <span class="import-status" id="syncStatus">—</span>
+                        <button class="btn-import" id="btnSyncConfig">Save config</button>
+                        <button class="btn-import" id="btnSyncPull">Pull latest</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="preview">
@@ -1556,6 +1572,7 @@ sc.addEventListener("wheel",e=>{
 /* ── Save / Load ── */
 const SAVE_KEY = 'cult_chart_v1';
 const SPACING_KEY = 'cult_chart_spacing';
+const SYNC_CFG_KEY = 'cult_chart_sync_cfg_v1';
 
 function loadSpacingFromStorage() {
     try {
@@ -1582,7 +1599,7 @@ function saveSpacingToStorage(value) {
 
 function saveToStorage() {
     try {
-        const data = { tree: serializeNode(root), autoMap: { ...autoMap }, autoIdx, uid };
+        const data = buildSnapshot();
         localStorage.setItem(SAVE_KEY, JSON.stringify(data));
         return true;
     } catch (e) { return false; }
@@ -1603,6 +1620,23 @@ function loadFromStorage() {
 
 function serializeNode(n) {
     return { id: n.id, name: n.name, collapsed: n.collapsed, children: n.children.map(serializeNode) };
+}
+
+function buildSnapshot() {
+    return {
+        tree: serializeNode(root),
+        autoMap: { ...autoMap },
+        autoIdx,
+        uid,
+        savedAt: new Date().toISOString()
+    };
+}
+
+function applySnapshot(data) {
+    if (typeof data.uid === 'number') uid = data.uid;
+    root = deserializeNode(data.tree);
+    Object.assign(autoMap, data.autoMap || {});
+    autoIdx = data.autoIdx || 0;
 }
 
 function deserializeNode(d) {
@@ -1636,7 +1670,143 @@ function markSaved() {
     setTimeout(() => { btnSave.textContent = 'Save'; btnSave.classList.remove('saved'); }, 2000);
 }
 
-btnSave.addEventListener('click', () => { if (saveToStorage()) markSaved(); });
+/* ── Cloud Sync (GitHub Gist) ── */
+const syncToggle = document.getElementById('syncToggle');
+const syncArrow = document.getElementById('syncArrow');
+const syncBody = document.getElementById('syncBody');
+const syncStatus = document.getElementById('syncStatus');
+const syncGistId = document.getElementById('syncGistId');
+const syncFileName = document.getElementById('syncFileName');
+const syncToken = document.getElementById('syncToken');
+const btnSyncConfig = document.getElementById('btnSyncConfig');
+const btnSyncPull = document.getElementById('btnSyncPull');
+
+let syncCfg = loadSyncConfig();
+hydrateSyncUi(syncCfg);
+
+syncToggle.addEventListener('click', () => {
+    const open = syncBody.classList.toggle('open');
+    syncArrow.classList.toggle('open', open);
+});
+
+btnSyncConfig.addEventListener('click', () => {
+    syncCfg = {
+        gistId: (syncGistId.value || '').trim(),
+        fileName: (syncFileName.value || '').trim() || 'cult-chart-save.json',
+        token: (syncToken.value || '').trim()
+    };
+    saveSyncConfig(syncCfg);
+    setSyncStatus('Config saved', true);
+});
+
+btnSyncPull.addEventListener('click', async () => {
+    await pullFromCloudAndApply(true);
+});
+
+btnSave.addEventListener('click', async () => {
+    if (!saveToStorage()) return;
+    let cloudOk = true;
+    if (syncCfg.gistId && syncCfg.token) cloudOk = await pushToCloud();
+    markSaved();
+    if (!cloudOk) setSyncStatus('Local save ok, cloud save failed', false);
+});
+
+function loadSyncConfig() {
+    try {
+        const raw = localStorage.getItem(SYNC_CFG_KEY);
+        if (!raw) return { gistId: '', fileName: 'cult-chart-save.json', token: '' };
+        const cfg = JSON.parse(raw);
+        return {
+            gistId: (cfg.gistId || '').trim(),
+            fileName: (cfg.fileName || '').trim() || 'cult-chart-save.json',
+            token: (cfg.token || '').trim()
+        };
+    } catch (e) {
+        return { gistId: '', fileName: 'cult-chart-save.json', token: '' };
+    }
+}
+
+function saveSyncConfig(cfg) {
+    try { localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg)); } catch (e) {}
+}
+
+function hydrateSyncUi(cfg) {
+    syncGistId.value = cfg.gistId || '';
+    syncFileName.value = cfg.fileName || 'cult-chart-save.json';
+    syncToken.value = cfg.token || '';
+}
+
+function setSyncStatus(message, ok) {
+    syncStatus.textContent = message;
+    syncStatus.className = `import-status ${ok ? 'ok' : 'err'}`;
+}
+
+async function pushToCloud() {
+    try {
+        if (!syncCfg.gistId || !syncCfg.token) {
+            setSyncStatus('Missing gist ID or token', false);
+            return false;
+        }
+        const body = {
+            files: {
+                [syncCfg.fileName || 'cult-chart-save.json']: {
+                    content: JSON.stringify(buildSnapshot(), null, 2)
+                }
+            }
+        };
+        const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(syncCfg.gistId)}`, {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/vnd.github+json',
+                'Authorization': `Bearer ${syncCfg.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            setSyncStatus(`Cloud save failed (${res.status})`, false);
+            return false;
+        }
+        setSyncStatus('Cloud save complete', true);
+        return true;
+    } catch (e) {
+        setSyncStatus('Cloud save failed (network)', false);
+        return false;
+    }
+}
+
+async function pullFromCloudAndApply(showStatus) {
+    try {
+        if (!syncCfg.gistId) {
+            if (showStatus) setSyncStatus('Missing gist ID', false);
+            return false;
+        }
+        const headers = { 'Accept': 'application/vnd.github+json' };
+        if (syncCfg.token) headers['Authorization'] = `Bearer ${syncCfg.token}`;
+        const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(syncCfg.gistId)}`, { headers });
+        if (!res.ok) {
+            if (showStatus) setSyncStatus(`Cloud pull failed (${res.status})`, false);
+            return false;
+        }
+        const gist = await res.json();
+        const fileName = syncCfg.fileName || 'cult-chart-save.json';
+        const file = gist.files && gist.files[fileName];
+        if (!file || !file.content) {
+            if (showStatus) setSyncStatus(`File not found: ${fileName}`, false);
+            return false;
+        }
+        const data = JSON.parse(file.content);
+        applySnapshot(data);
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        render();
+        scheduleUpdate();
+        if (showStatus) setSyncStatus('Pulled latest cloud save', true);
+        return true;
+    } catch (e) {
+        if (showStatus) setSyncStatus('Cloud pull failed (parse/network)', false);
+        return false;
+    }
+}
 
 /* ── Copy array ── */
 document.getElementById('btnCopy').addEventListener('click', () => {
@@ -1755,6 +1925,9 @@ hasUnsaved = false;
 saveIndicator.classList.remove('visible');
 btnSave.textContent = 'Save';
 updateUndoButton();
+if (syncCfg.gistId) {
+    pullFromCloudAndApply(false);
+}
 </script>
 </body>
 </html>
