@@ -583,7 +583,7 @@ function selectNode(id, options = {}) {
     sel = id;
     render();
     syncPreviewSelection();
-    if (options.scrollTree) {
+    if (options.scrollTree && id !== null) {
         requestAnimationFrame(() => {
             treeEl.querySelector(`[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
         });
@@ -717,23 +717,33 @@ function renderLegend() {
 }
 
 /* ── Mutations ── */
-function addChild(pid) {
+function addChild(pid, options = {}) {
     pushUndoState();
     const p = find(pid);
     const c = mk('New Member');
     p.children.push(c); p.collapsed = false;
     sel = c.id; render(); scheduleUpdate();
-    requestAnimationFrame(() => startRename(c.id));
+    if (options.previewRename) {
+        queuePreviewRename(c.id);
+    } else {
+        requestAnimationFrame(() => startRename(c.id));
+    }
+    return c.id;
 }
 
-function addSibling(id) {
+function addSibling(id, options = {}) {
     const p = findParent(id); if (!p) return;
     pushUndoState();
     const idx = p.children.findIndex(c => c.id === id);
     const s = mk('New Member');
     p.children.splice(idx + 1, 0, s);
     sel = s.id; render(); scheduleUpdate();
-    requestAnimationFrame(() => startRename(s.id));
+    if (options.previewRename) {
+        queuePreviewRename(s.id);
+    } else {
+        requestAnimationFrame(() => startRename(s.id));
+    }
+    return s.id;
 }
 
 function deleteNode(id) {
@@ -741,6 +751,18 @@ function deleteNode(id) {
     pushUndoState();
     p.children = p.children.filter(c => c.id !== id);
     sel = p.id; render(); scheduleUpdate();
+}
+
+function renameNode(id, nextName) {
+    const node = find(id);
+    const v = (nextName || '').trim();
+    if (!node || !v || v === node.name) return false;
+    pushUndoState();
+    node.name = v;
+    sel = id;
+    render();
+    scheduleUpdate();
+    return true;
 }
 
 function moveSibling(id, dir) {
@@ -840,9 +862,20 @@ btnToggle.addEventListener('click', () => {
 const previewEl = document.getElementById('preview');
 let debounce = null;
 let cameraState = null;
+let pendingPreviewRename = null;
 
 function syncPreviewSelection() {
     previewEl.contentWindow?.postMessage({ type: 'select-node', id: sel }, '*');
+}
+
+function queuePreviewRename(id) {
+    pendingPreviewRename = id;
+}
+
+function syncPreviewRename() {
+    if (pendingPreviewRename === null) return;
+    previewEl.contentWindow?.postMessage({ type: 'start-rename', id: pendingPreviewRename }, '*');
+    pendingPreviewRename = null;
 }
 
 function scheduleUpdate() {
@@ -860,21 +893,32 @@ window.addEventListener('message', e => {
         return;
     }
     if (e.data.type === 'select-node') {
-        if (typeof e.data.id === 'number' && find(e.data.id)) selectNode(e.data.id, { scrollTree: true });
+        if (e.data.id === null) selectNode(null);
+        else if (typeof e.data.id === 'number' && find(e.data.id)) selectNode(e.data.id, { scrollTree: true });
         return;
     }
     if (e.data.type === 'node-action') {
         const id = e.data.id;
         if (typeof id !== 'number' || !find(id)) return;
-        if (e.data.action === 'rename') startRename(id);
-        else if (e.data.action === 'add-child') addChild(id);
-        else if (e.data.action === 'add-sibling') addSibling(id);
+        if (e.data.action === 'rename') {
+            selectNode(id, { scrollTree: true });
+            if (e.data.inline) queuePreviewRename(id);
+            else startRename(id);
+            syncPreviewRename();
+        }
+        else if (e.data.action === 'rename-commit') renameNode(id, e.data.value);
+        else if (e.data.action === 'add-child') addChild(id, { previewRename: !!e.data.inline });
+        else if (e.data.action === 'add-sibling') addSibling(id, { previewRename: !!e.data.inline });
         else if (e.data.action === 'move-up') moveSibling(id, -1);
         else if (e.data.action === 'move-down') moveSibling(id, 1);
+        else if (e.data.action === 'delete') deleteNode(id);
     }
 });
 
-previewEl.addEventListener('load', syncPreviewSelection);
+previewEl.addEventListener('load', () => {
+    syncPreviewSelection();
+    syncPreviewRename();
+});
 
 function buildChart(treeData, initialCamera, selectedId) {
     const rels = toRelationships(deserializeNode(treeData));
@@ -901,6 +945,7 @@ svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 .node-btn{width:28px;height:28px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#f3ead9;font:700 13px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .node-btn:hover,.node-btn:active{background:rgba(212,168,76,.22);color:#f6d183}
 .node-btn.disabled{opacity:.38;pointer-events:none}
+.node-input{width:100%;min-height:38px;padding:8px 10px;border:2px solid rgba(212,168,76,.92);border-radius:4px;background:#fffaf1;color:#2b2117;font:700 14px/1.15 Arial,sans-serif;text-align:center;outline:none;box-shadow:0 8px 24px rgba(0,0,0,.16)}
 ${colorCSS}
 </style></head><body>
 <div id="scene"><div id="world"><svg id="edges"></svg><div id="nodesLayer"></div></div></div>
@@ -911,7 +956,7 @@ const INIT_SEL=${selectedJSON};
 const C={nW:190,nH:54,xG:280,yG:180,pX:120,pY:80,bG:24,minZ:0.15,maxZ:3};
 const sc=document.getElementById("scene"),wr=document.getElementById("world"),sv=document.getElementById("edges"),nl=document.getElementById("nodesLayer");
 const ch=new Map(),po=new Map(),nd=new Map(),an=[];
-let rt=null,selId=INIT_SEL;
+let rt=null,selId=INIT_SEL,renamingId=null,focusRenameId=null,suppressSceneClick=false;
 function walk(n,p=null){
   nd.set(n.id,n);
   an.push(n);
@@ -932,7 +977,7 @@ const xOf=n=>C.pX+ps.get(n).x*C.xG;
 const yOf=n=>C.pY+ps.get(n).y*C.yG;
 const sc2=n=>n==="Founding Father"?"Founding":n.split(" ")[0];
 function post(msg){window.parent.postMessage(msg,"*");}
-function act(id,action){post({type:"node-action",id,action});}
+function act(id,action,inline=false){post({type:"node-action",id,action,inline});}
 function mkBtn(txt,title,handler,disabled){
   const b=document.createElement("button");
   b.className="node-btn"+(disabled?" disabled":"");
@@ -940,6 +985,26 @@ function mkBtn(txt,title,handler,disabled){
   b.addEventListener("pointerdown",e=>e.stopPropagation());
   b.addEventListener("click",e=>{e.stopPropagation();if(!disabled)handler();});
   return b;
+}
+function beginRename(id){
+  selId=id;
+  renamingId=id;
+  focusRenameId=id;
+  updateSelection();
+  rN();
+  post({type:"select-node",id});
+}
+function commitRename(id,input){
+  const value=input.value.trim();
+  renamingId=null;
+  focusRenameId=null;
+  rN();
+  if(value) post({type:"node-action",id,action:"rename-commit",value});
+}
+function cancelRename(){
+  renamingId=null;
+  focusRenameId=null;
+  rN();
 }
 function updateSelection(){
   for(const wrap of nl.children){
@@ -957,12 +1022,31 @@ function rN(){
     wrap.dataset.id=id;
     wrap.style.left=xOf(id)+"px";
     wrap.style.top=yOf(id)+"px";
-    const d=document.createElement("div");
-    d.className="node "+sc2(node.name);
-    d.textContent=node.name;
-    d.addEventListener("pointerdown",e=>e.stopPropagation());
-    d.addEventListener("click",e=>{e.stopPropagation();selId=id;updateSelection();post({type:"select-node",id});});
-    wrap.appendChild(d);
+    if(renamingId===id){
+      const inp=document.createElement("input");
+      inp.className="node-input";
+      inp.type="text";
+      inp.value=node.name;
+      inp.spellcheck=false;
+      inp.addEventListener("pointerdown",e=>e.stopPropagation());
+      inp.addEventListener("click",e=>e.stopPropagation());
+      inp.addEventListener("blur",()=>commitRename(id,inp));
+      inp.addEventListener("keydown",e=>{
+        if(e.key==="Enter"){e.preventDefault();e.stopPropagation();commitRename(id,inp);}
+        if(e.key==="Escape"){e.preventDefault();e.stopPropagation();cancelRename();}
+      });
+      wrap.appendChild(inp);
+      if(focusRenameId===id){
+        requestAnimationFrame(()=>{inp.focus();inp.select();focusRenameId=null;});
+      }
+    }else{
+      const d=document.createElement("div");
+      d.className="node "+sc2(node.name);
+      d.textContent=node.name;
+      d.addEventListener("pointerdown",e=>e.stopPropagation());
+      d.addEventListener("click",e=>{e.stopPropagation();selId=id;updateSelection();post({type:"select-node",id});});
+      wrap.appendChild(d);
+    }
     const acts=document.createElement("div");
     acts.className="node-actions";
     const parentId=po.get(id);
@@ -971,10 +1055,11 @@ function rN(){
     if(parentId!==undefined){
       acts.appendChild(mkBtn("▲","Move up",()=>act(id,"move-up"),idx<=0));
       acts.appendChild(mkBtn("▼","Move down",()=>act(id,"move-down"),idx===-1||idx>=sibs.length-1));
-      acts.appendChild(mkBtn("↔","Add sibling",()=>act(id,"add-sibling"),false));
+      acts.appendChild(mkBtn("↔","Add sibling",()=>act(id,"add-sibling",true),false));
     }
-    acts.appendChild(mkBtn("+","Add child",()=>act(id,"add-child"),false));
-    acts.appendChild(mkBtn("✎","Rename",()=>act(id,"rename"),false));
+    acts.appendChild(mkBtn("+","Add child",()=>act(id,"add-child",true),false));
+    acts.appendChild(mkBtn("✎","Rename",()=>beginRename(id),false));
+    if(parentId!==undefined) acts.appendChild(mkBtn("×","Delete",()=>act(id,"delete"),false));
     wrap.appendChild(acts);
     nl.appendChild(wrap);
   }
@@ -1004,7 +1089,11 @@ rN();rE();
 window.addEventListener("message",e=>{
   if(e.data&&e.data.type==="select-node"){
     selId=e.data.id;
+    if(selId===null) renamingId=null;
     updateSelection();
+  }
+  if(e.data&&e.data.type==="start-rename"&&typeof e.data.id==="number"){
+    beginRename(e.data.id);
   }
 });
 
@@ -1034,6 +1123,7 @@ else{const r=sc.getBoundingClientRect();cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;a
 
 /* Active pointer registry  id → {x, y} */
 const ptrs = new Map();
+let tapStartX=0, tapStartY=0, dragMoved=false;
 
 /* ── Momentum ── */
 let vx=0, vy=0, rafId=null;
@@ -1123,9 +1213,11 @@ sc.addEventListener("pointerdown",e=>{
   if(ptrs.size===1){
     pinchActive=false;
     snapshotPan();
+    tapStartX=e.clientX; tapStartY=e.clientY; dragMoved=false;
     sc.classList.add("dragging");
   } else if(ptrs.size===2){
     snapshotPinch();
+    dragMoved=true;
   }
 });
 
@@ -1138,6 +1230,7 @@ sc.addEventListener("pointermove",e=>{
     /* ── Pan: position from anchor for accuracy; delta from last frame for velocity ── */
     const p=ptrs.get(e.pointerId);
     const fdx=p.x-lastPanX, fdy=p.y-lastPanY; /* true frame-to-frame delta */
+    if(Math.hypot(p.x-tapStartX,p.y-tapStartY)>6) dragMoved=true;
     pushVelSample(fdx,fdy);
     lastPanX=p.x; lastPanY=p.y;
     cam.x=camAnchorX+(p.x-panAnchorX);
@@ -1171,17 +1264,29 @@ function endPointer(e){
   if(ptrs.size===0){
     sc.classList.remove("dragging");
     pinchActive=false;
+    suppressSceneClick=dragMoved;
     const vel=readVel();
     vx=vel.x; vy=vel.y;
     launchMomentum();
     resetVelBuf();
+    setTimeout(()=>{suppressSceneClick=false;},0);
   } else if(ptrs.size===1){
     /* Finger lifted out of pinch — restart pan from current state */
     pinchActive=false;
     resetVelBuf();
     snapshotPan();
+    dragMoved=true;
   }
 }
+
+sc.addEventListener("click",e=>{
+  if(suppressSceneClick) return;
+  if(e.target.closest(".node-wrap")) return;
+  if(renamingId!==null) return;
+  selId=null;
+  updateSelection();
+  post({type:"select-node",id:null});
+});
 
 /* ── Mouse wheel zoom ──
    Strategy: normalise all deltas into a single "zoom intensity"
