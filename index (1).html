@@ -1,585 +1,952 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing Samples</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --ink: #0f1419; --muted: #5a5a5a; --rule: #d9dade;
-      --cream: #f8f9fa; --accent: #3d6b5e; --white: #ffffff;
-    }
-    html { font-size: 16px; scroll-behavior: smooth; }
-    body { background: var(--cream); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; min-height: 100vh; }
-    .view { display: none; } .view.active { display: block; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scalable Organizational Chart</title>
 
-    /* NAV */
-    nav { position: fixed; top:0; left:0; right:0; z-index:100; background:var(--cream); border-bottom:1px solid var(--rule); padding:0 2rem; height:52px; display:flex; align-items:center; justify-content:space-between; }
-    .nav-home { font-size:0.7rem; font-weight:400; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); cursor:pointer; border:none; background:none; padding:0; transition:color 0.15s; font-family:'IBM Plex Sans',sans-serif; }
-    .nav-home:hover { color:var(--ink); }
-    .nav-label { font-size:0.7rem; font-weight:400; letter-spacing:0.06em; text-transform:none; color:var(--muted); font-family:'IBM Plex Sans',sans-serif; }
+<style>
+/* =============================================================================
+   GLOBAL / VIEWPORT
+============================================================================= */
 
-    /* LANDING */
-    #landing { max-width:780px; margin:0 auto; padding:0 1.5rem; }
-    .landing-header { padding:7rem 0 2.5rem; border-bottom:1px solid var(--rule); }
-    .masthead-label { font-size:0.72rem; font-weight:400; letter-spacing:0.08em; text-transform:none; color:var(--muted); margin-bottom:0.85rem; font-style:italic; font-family:'Lora',Georgia,serif; }
-    .landing-header h1 { font-family:'Lora',Georgia,serif; font-weight:400; font-size:clamp(2rem,4.5vw,3rem); line-height:1.15; letter-spacing:0; }
-    .landing-header p { margin-top:1rem; font-size:0.95rem; color:var(--muted); max-width:520px; line-height:1.65; }
-    .section-label { font-size:0.75rem; font-weight:400; letter-spacing:0.04em; text-transform:none; color:var(--muted); padding:2.2rem 0 0.9rem; border-bottom:1px solid var(--rule); margin-bottom:1.5rem; font-family:'Lora',Georgia,serif; font-style:italic; }
-    .cards { padding-bottom:6rem; display:flex; flex-direction:column; gap:1.5rem; }
+* {
+    box-sizing: border-box;
+}
 
-    /* CARDS */
-    .card { background:var(--white); border:1px solid var(--rule); padding:2.2rem 2.4rem 2rem; display:grid; grid-template-columns:1fr auto; gap:0 2rem; align-items:start; cursor:pointer; opacity:0; transform:translateY(18px); animation:rise 0.55s ease forwards; transition:border-color 0.2s,box-shadow 0.2s; }
-    .card:hover { border-color:var(--accent); border-left:3px solid var(--accent); }
-    .card:nth-child(1){animation-delay:0.1s} .card:nth-child(2){animation-delay:0.22s} .card:nth-child(3){animation-delay:0.1s}
-    .card.supplemental { background:var(--cream); border-style:dashed; }
-    @keyframes rise { to { opacity:1; transform:translateY(0); } }
-    .card-meta { font-size:0.75rem; font-weight:400; letter-spacing:0.04em; text-transform:none; color:var(--accent); margin-bottom:0.55rem; font-family:'IBM Plex Sans',sans-serif; }
-    .card h2 { font-family:'Lora',Georgia,serif; font-weight:500; font-size:1.2rem; line-height:1.3; margin-bottom:0.7rem; }
-    .card-desc { font-size:0.9rem; line-height:1.7; color:var(--muted); max-width:520px; }
-    .card-right { grid-column:2; grid-row:1/4; display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem; padding-top:0.2rem; }
-    .read-btn { display:inline-flex; align-items:center; gap:0.45rem; font-family:'IBM Plex Sans',sans-serif; font-weight:400; font-size:0.78rem; letter-spacing:0.04em; text-transform:none; color:var(--ink); border:1px solid var(--ink); padding:0.5rem 1rem; white-space:nowrap; background:none; cursor:pointer; transition:background 0.18s,color 0.18s; text-decoration:none; }
-    .read-btn:hover { background:var(--ink); color:var(--cream); }
-    .read-btn svg { width:11px; height:11px; flex-shrink:0; }
-    .read-btn.secondary { border-color:var(--muted); color:var(--muted); }
-    .read-btn.secondary:hover { background:var(--muted); color:var(--cream); }
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 
-    /* ARTICLE */
-    #article-view { max-width:680px; margin:0 auto; padding:0 1.5rem; }
-    .article-header { padding:7rem 0 2rem; border-bottom:1px solid var(--rule); margin-bottom:3rem; }
-    .article-meta { font-size:0.75rem; font-weight:400; letter-spacing:0.04em; text-transform:none; color:var(--accent); margin-bottom:0.9rem; font-family:'Lora',Georgia,serif; font-style:italic; }
-    .article-header h1 { font-family:'Lora',Georgia,serif; font-weight:400; font-size:clamp(1.6rem,3.5vw,2.2rem); line-height:1.2; letter-spacing:0; margin-bottom:1.2rem; }
-    .article-body { padding-bottom:6rem; }
-    .article-body p { font-size:1.05rem; line-height:1.85; margin-bottom:1.6rem; color:var(--ink); }
-    .article-body p sup { font-size:0.65rem; color:var(--accent); vertical-align:super; line-height:0; }
-    .article-body h2 { font-family:'Lora',Georgia,serif; font-weight:500; font-size:1.15rem; line-height:1.3; margin:2.5rem 0 1rem; color:var(--ink); }
-    .article-body h3 { font-family:'IBM Plex Sans',sans-serif; font-weight:400; font-size:0.8rem; letter-spacing:0.07em; text-transform:uppercase; color:var(--muted); margin:2rem 0 0.75rem; }
-    .article-body ul { margin:0 0 1.6rem 1.2rem; }
-    .article-body ul li { font-size:1.05rem; line-height:1.85; margin-bottom:0.4rem; color:var(--ink); }
-    .article-body ul li sup { font-size:0.65rem; color:var(--accent); vertical-align:super; line-height:0; }
-    .article-divider { width:2.5rem; height:1px; background:var(--rule); margin:2.5rem 0; }
-    .article-pull { font-family:'Lora',Georgia,serif; font-style:italic; font-size:1.15rem; line-height:1.6; color:var(--ink); border-left:2px solid var(--accent); padding-left:1.3rem; margin:2.5rem 0; }
-    .rec-box { border:1px solid var(--rule); background:var(--white); padding:1.4rem 1.6rem; margin:0.6rem 0; }
-    .rec-box strong { font-weight:500; display:block; margin-bottom:0.4rem; font-size:0.9rem; }
-    .rec-box p { font-size:0.9rem !important; margin-bottom:0 !important; color:var(--muted) !important; line-height:1.65 !important; }
-    .footnotes { border-top:1px solid var(--rule); padding-top:1.8rem; margin-top:1rem; }
-    .footnotes p { font-size:0.78rem !important; line-height:1.6 !important; color:var(--muted) !important; margin-bottom:0.5rem !important; }
-    .footnotes-label { font-size:0.72rem; font-weight:400; letter-spacing:0.04em; text-transform:none; color:var(--muted); margin-bottom:1rem; font-family:'Lora',Georgia,serif; font-style:italic; }
+    background: #eef3fb;
 
-    /* CHART — bare Excel style */
-    .chart-wrap { margin:2rem 0; background:var(--white); padding:1rem 0.5rem 0.5rem; }
-    .chart-title { font-family:'DM Sans',sans-serif; font-weight:400; font-size:0.95rem; text-align:center; margin-bottom:0.6rem; line-height:1.35; color:var(--ink); }
-    .chart-canvas-wrap { position:relative; width:100%; height:220px; }
-    .chart-caption { margin-top:0.6rem; font-size:0.72rem; color:var(--muted); line-height:1.5; }
+    font-family: Arial, sans-serif;
 
-    @media (max-width:540px) {
-      .card { grid-template-columns:1fr; padding:1.6rem; }
-      .card-right { grid-column:1; grid-row:auto; flex-direction:row; margin-top:1.2rem; }
-    }
-  </style>
+    user-select: none;
+    -webkit-user-select: none;
+
+    /*
+        Improves text rendering during transforms.
+    */
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+    The visible camera viewport.
+
+    IMPORTANT:
+    The chart itself never changes layout during zoom.
+    We only move/scale the world layer.
+*/
+
+#scene {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+
+    cursor: grab;
+    touch-action: none;
+}
+
+#scene.dragging {
+    cursor: grabbing;
+}
+
+/* =============================================================================
+   WORLD LAYER
+============================================================================= */
+
+/*
+    This is the ENTIRE chart world.
+
+    We zoom/pan ONLY this layer.
+
+    We do NOT:
+        - resize nodes
+        - recompute spacing
+        - scale text independently
+
+    That keeps geometry stable and prevents overlap bugs.
+*/
+
+#world {
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    transform-origin: 0 0;
+
+    will-change: transform;
+
+    /*
+        Helps browsers keep text crisp during transforms.
+    */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* =============================================================================
+   SVG EDGE LAYER
+============================================================================= */
+
+svg {
+    position: absolute;
+    inset: 0;
+
+    overflow: visible;
+    pointer-events: none;
+
+    z-index: 1;
+}
+
+/* =============================================================================
+   NODE LAYER
+============================================================================= */
+
+#nodesLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    z-index: 2;
+}
+
+/* =============================================================================
+   NODE STYLE
+============================================================================= */
+
+.node {
+    position: absolute;
+
+    width: 190px;
+    min-height: 54px;
+
+    padding: 8px 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.15;
+
+    color: white;
+
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.28);
+
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+
+    transform: translateX(-50%);
+
+    /*
+        Prevents browser subpixel blur accumulation.
+    */
+    contain: layout style paint;
+}
+
+/* =============================================================================
+   SIGN COLORS
+============================================================================= */
+
+.Founding   { background: #6c757d; }
+.Starbender { background: #3b82f6; }
+.Veilcross  { background: #8b5cf6; }
+.Hollowmark { background: #9ca3af; }
+.Greythorne { background: #14b8a6; }
+.Ashenfold  { background: #a855f7; }
+.Duskhollow { background: #64748b; }
+.Thornveil  { background: #22c55e; }
+.Wychstone  { background: #ef4444; }
+.Sablerune  { background: #f97316; }
+.Marrowfen  { background: #a16207; }
+.Emberlace  { background: #fb923c; }
+.Pyrelace   { background: #f87171; }
+
+</style>
 </head>
+
 <body>
 
-<nav>
-  <button class="nav-home" onclick="showLanding()">← All pieces</button>
-  <span class="nav-label" id="nav-label">Writing Samples</span>
-</nav>
+<div id="scene">
 
-<!-- LANDING -->
-<div id="landing" class="view active">
-  <div class="landing-header">
-    <p class="masthead-label">Writing Samples</p>
-    <h1>Selected Work</h1>
-    <p>Writing across energy policy, cultural criticism, and analytical research.</p>
-  </div>
-  <div class="cards">
-    <article class="card" onclick="showArticle('hydro')">
-      <div>
-        <p class="card-meta">Op-Ed &nbsp;·&nbsp; Energy Policy</p>
-        <h2>Canada's Clean Grid Has a Rainy-Day Problem</h2>
-        <p class="card-desc">Canada's electricity grid is among the cleanest in the world — but its low-emissions record depends heavily on hydroelectric availability. This piece examines the structural gap that emerges when hydro underperforms, and why electrification may widen that gap before it narrows it.</p>
-      </div>
-      <div class="card-right">
-        <button class="read-btn">Read <svg viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H4M11 1V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
-    </article>
+    <div id="world">
 
-    <article class="card" onclick="showArticle('barbenheimer')">
-      <div>
-        <p class="card-meta">Essay &nbsp;·&nbsp; Culture &amp; Media</p>
-        <h2>The Anatomy of Barbenheimer as a Phenomenon and Lesson</h2>
-        <p class="card-desc">The summer of 2023 produced one of the most unexpected cultural events in recent Hollywood history. This essay examines what made "Barbenheimer" work, why it can't simply be replicated, and what its underlying logic means for the future of the blockbuster.</p>
-      </div>
-      <div class="card-right">
-        <button class="read-btn">Read <svg viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H4M11 1V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
-    </article>
+        <svg id="edges"></svg>
 
-    <p class="section-label" style="margin-top:1rem;">Research</p>
+        <div id="nodesLayer"></div>
 
-    <article class="card supplemental" style="cursor:default;">
-      <div>
-        <p class="card-meta">Policy Brief &nbsp;·&nbsp; Energy &amp; Climate</p>
-        <h2>The Hydro-Emissions Tension: Addressing Structural Vulnerabilities in Canada's Net-Zero Transition</h2>
-        <p class="card-desc">The analytical paper underlying the op-ed. Includes provincial case studies, projected grid load scenarios through 2035, and three policy recommendations for federal and provincial decision-makers.</p>
-      </div>
-      <div class="card-right">
-        <button class="read-btn" onclick="showArticle('brief-long')">Long Version <svg viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H4M11 1V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="read-btn secondary" onclick="showArticle('brief-short')">Short Brief <svg viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H4M11 1V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
-    </article>
-  </div>
-</div>
+    </div>
 
-<!-- ARTICLE VIEW -->
-<div id="article-view" class="view">
-  <div class="article-header">
-    <p class="article-meta" id="article-meta"></p>
-    <h1 id="article-title"></h1>
-  </div>
-  <div class="article-body" id="article-body"></div>
 </div>
 
 <script>
-/* ── CHART CONFIGS (bare Excel style) ── */
-const CHART_FONT = { family: 'IBM Plex Sans', size: 11 };
-const GRID_COLOR = '#d0d0d0';
-const TICK_COLOR = '#444';
 
-const years = [2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
-const hydroData = [381.5,392.2,383.5,371.0,363.2,356.4,358.1,343.8,341.8,347.0];
-const fuelData  = [137.1,131.4,130.8,126.0,117.2,128.5,137.8,140.2,141.0,143.4];
+/* =============================================================================
+   IMPORTANT ARCHITECTURE NOTES
+===============================================================================
 
-function makeLineConfig() {
-  return {
-    type: 'line',
-    data: {
-      labels: years,
-      datasets: [
-        {
-          label: 'Hydroelectricity',
-          data: hydroData,
-          borderColor: '#4472C4',
-          backgroundColor: '#4472C4',
-          pointBackgroundColor: '#ffffff',
-          pointBorderColor: '#4472C4',
-          pointBorderWidth: 1.5,
-          pointRadius: 4,
-          pointHoverRadius: 5,
-          borderWidth: 1.5,
-          tension: 0
-        },
-        {
-          label: 'Combustible Fuels',
-          data: fuelData,
-          borderColor: '#ED7D31',
-          backgroundColor: '#ED7D31',
-          pointBackgroundColor: '#ffffff',
-          pointBorderColor: '#ED7D31',
-          pointBorderWidth: 1.5,
-          pointRadius: 4,
-          pointHoverRadius: 5,
-          borderWidth: 1.5,
-          tension: 0
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
-          labels: {
-            font: CHART_FONT,
-            color: TICK_COLOR,
-            boxWidth: 16,
-            boxHeight: 2,
-            padding: 14,
-            usePointStyle: false
-          }
-        },
-        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y} TWh` } }
-      },
-      scales: {
-        x: {
-          grid: { color: GRID_COLOR, lineWidth: 0.5 },
-          border: { color: GRID_COLOR },
-          ticks: { font: CHART_FONT, color: TICK_COLOR, maxRotation: 0 }
-        },
-        y: {
-          min: 0, max: 500,
-          grid: { color: GRID_COLOR, lineWidth: 0.5 },
-          border: { color: GRID_COLOR },
-          ticks: { stepSize: 100, font: CHART_FONT, color: TICK_COLOR }
-        }
-      }
-    }
-  };
-}
+THIS FILE IS DESIGNED FOR HEAVY ITERATION.
 
-// Projection bar chart data (normal vs drought, 2025/2030/2035)
-const projLabels = ['Normal\n2025','Drought\n2025','Normal\n2030','Drought\n2030','Normal\n2035','Drought\n2035'];
-const hNorm = [347, 312.3, 380, 342.0, 410, 369.0];
-const hShort= [0,   34.7,  0,   38.0,  0,   41.0 ];
-const hRem  = [263, 263,   305, 305,   345, 345   ];
+You can continuously:
+    - add nodes
+    - remove nodes
+    - reorganize hierarchy
+    - expand the chart
 
-const projConfig = {
-  type: 'bar',
-  data: {
-    labels: projLabels,
-    datasets: [
-      { label:'Hydro',         data: hNorm,  backgroundColor:'#4472C4', stack:'s' },
-      { label:'Hydro Shortfall',data: hShort, backgroundColor:'#70AD47', stack:'s' },
-      { label:'Remaining Load',data: hRem,   backgroundColor:'#ED7D31', stack:'s' }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'bottom',
-        labels: { font: CHART_FONT, color: TICK_COLOR, boxWidth: 14, boxHeight: 10, padding: 14 }
-      },
-      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${Math.round(c.parsed.y)} TWh` } }
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { color: GRID_COLOR },
-        ticks: { font: { family:'IBM Plex Sans', size:10 }, color: TICK_COLOR, maxRotation: 0 }
-      },
-      y: {
-        min: 0, max: 800,
-        grid: { color: GRID_COLOR, lineWidth: 0.5 },
-        border: { color: GRID_COLOR },
-        ticks: { stepSize: 100, font: CHART_FONT, color: TICK_COLOR }
-      }
-    }
-  }
+WITHOUT changing layout code.
+
+===============================================================================
+HOW TO EDIT THE CHART
+===============================================================================
+
+ONLY edit the relationships array below.
+
+Every entry is:
+
+    ["Parent Name", "Child Name"]
+
+Example:
+
+    ["Alice", "Bob"]
+
+means:
+
+    Alice
+      ↓
+      Bob
+
+===============================================================================
+WHY THIS APPROACH WORKS
+===============================================================================
+
+Earlier failed approaches:
+    - manually positioned boxes
+    - independently routed edges
+    - dynamically searched for paths
+
+That caused:
+    - overlapping lines
+    - fake relationships
+    - broken routing
+    - unstable scaling
+
+THIS implementation instead:
+
+    1. Builds a true hierarchy tree
+    2. Computes recursive layout
+    3. Centers parents over descendants
+    4. Draws shared connector buses
+    5. Uses a camera transform for zoom/pan
+
+That architecture scales cleanly.
+
+===============================================================================
+CRITICAL DESIGN RULE
+===============================================================================
+
+THE WORLD NEVER RESCALES ITS INTERNAL LAYOUT.
+
+Zoom only changes the CAMERA.
+
+That means:
+    - node spacing remains stable
+    - text remains crisp
+    - routing remains correct
+    - geometry never collapses
+
+===============================================================================
+*/
+
+
+/* =============================================================================
+   RELATIONSHIP DATA
+============================================================================= */
+
+const relationships = [
+
+["Founding Father","Starbender Aerion"],
+["Founding Father","Veilcross Hadrien"],
+["Founding Father","Hollowmark Ennis"],
+
+["Starbender Aerion","Starbender Calliothene"],
+["Starbender Aerion","Starbender Tarn"],
+
+["Veilcross Hadrien","Veilcross Ilm"],
+["Veilcross Hadrien","Veilcross Joren"],
+
+["Starbender Calliothene","Greythorne Sael"],
+["Starbender Calliothene","Greythorne Eirevann"],
+["Starbender Calliothene","Greythorne Talin"],
+
+["Starbender Tarn","Starbender Korin"],
+["Starbender Tarn","Starbender Duvaine"],
+["Starbender Tarn","Starbender Oren"],
+
+["Veilcross Ilm","Veilcross Pell"],
+["Veilcross Ilm","Veilcross Oranthas"],
+
+["Veilcross Joren","Veilcross Sora"],
+
+["Greythorne Sael","Greythorne Una"],
+["Greythorne Sael","Greythorne Veor"],
+["Greythorne Sael","Greythorne Velindra"],
+
+["Greythorne Eirevann","Ashenfold Thrennovael"],
+
+["Starbender Korin","Starbender Zev"],
+["Starbender Korin","Starbender Orvanthis"],
+
+["Starbender Duvaine","Duskhollow Caleo"],
+
+["Starbender Oren","Starbender Isolvar"],
+
+["Veilcross Pell","Veilcross Emrethis"],
+["Veilcross Pell","Veilcross Faro"],
+
+["Veilcross Oranthas","Thornveil Gend"],
+["Veilcross Oranthas","Thornveil Hesper"],
+["Veilcross Oranthas","Thornveil Iro"],
+
+["Veilcross Sora","Veilcross Aemorrhis"],
+["Veilcross Sora","Veilcross Jorah"],
+
+["Greythorne Talin","Greythorne Lir"],
+
+["Greythorne Una","Greythorne Mei"],
+
+["Greythorne Velindra","Wychstone Noor"],
+
+["Ashenfold Thrennovael","Sablerune Oris"],
+["Ashenfold Thrennovael","Sablerune Renn"],
+
+["Starbender Zev","Starbender Quill"],
+
+["Starbender Orvanthis","Marrowfen Rann"],
+["Starbender Orvanthis","Marrowfen Saris"],
+
+["Duskhollow Caleo","Duskhollow Ula"],
+
+["Veilcross Emrethis","Emberlace Vren"],
+["Veilcross Emrethis","Emberlace Wyl"],
+
+["Thornveil Iro","Thornveil Xeph"],
+
+["Veilcross Aemorrhis","Pyrelace Yorrin"],
+["Veilcross Aemorrhis","Pyrelace Zera"],
+
+["Marrowfen Saris","Marrowfen Sera"]
+
+];
+
+
+/* =============================================================================
+   CONSTANTS
+============================================================================= */
+
+const CONFIG = {
+
+    nodeWidth: 190,
+    nodeHeight: 54,
+
+    /*
+        More spacing = cleaner chart.
+
+        Increase these safely as the org grows.
+    */
+
+    xGap: 280,
+    yGap: 180,
+
+    paddingX: 120,
+    paddingY: 80,
+
+    busGap: 24,
+
+    minZoom: 0.25,
+    maxZoom: 2.5
 };
 
-/* ── CHART HTML SNIPPETS ── */
-const lineChartHTML = (id) => `
-  <div class="chart-wrap">
-    <p class="chart-title">Hydroelectric and combustible fuel generation, Canada, 2016–2025</p>
-    <div class="chart-canvas-wrap"><canvas id="${id}"></canvas></div>
-    <p class="chart-caption">All values are in Terawatt-hours (TWh).<br>Source: Statistics Canada, Table 25-10-0015-01</p>
-  </div>`;
 
-const projChartHTML = (id) => `
-  <div class="chart-wrap">
-    <p class="chart-title">Projected grid load and hydro contribution under normal and drought conditions, 2025–2035</p>
-    <div class="chart-canvas-wrap"><canvas id="${id}"></canvas></div>
-    <p class="chart-caption">All values are in Terawatt-hours (TWh). Each year shows a normal-year bar (left) and a drought-year bar (right).<br>2025 actuals: Statistics Canada, Table 25-10-0015-01.<br>Projections are illustrative, not forecasts. 2030 and 2035 values interpolated from CER Canada's Energy Future 2023, Current Measures scenario.<br>Drought scenario applies a 10% hydro decline, consistent with the 9.3% national decline recorded in 2023 (Statistics Canada).</p>
-  </div>`;
+/* =============================================================================
+   DOM REFERENCES
+============================================================================= */
 
-/* ── ARTICLE CONTENT ── */
+const scene = document.getElementById("scene");
+const world = document.getElementById("world");
+const svg = document.getElementById("edges");
+const nodesLayer = document.getElementById("nodesLayer");
 
-const hydroBody = `
-  <p>Canada's electricity sector has a genuine success story to tell. Since 2005, greenhouse gas emissions from electricity generation have fallen by 58%, the single largest sectoral reduction anywhere in the Canadian economy.<sup>1</sup> In a normal year, more than 80% of the power flowing through Canadian homes and factories comes from non-emitting sources.<sup>2</sup> That is a real achievement, and one that shapes how Canada thinks about its broader path to net zero.</p>
-  <p>But the phrase "a normal year" carries more weight than it might seem. As Canada pushes to electrify its economy (cars, heating, industry), the question of what happens in an abnormal year is becoming one of the most consequential in Canadian energy policy.</p>
-  <p>Right now, the answer is largely: fossil fuels.</p>
-  <div class="article-divider"></div>
-  <p>Canada's electricity grid is built on hydropower. Hydro accounts for nearly 60% of national generation, and in provinces like British Columbia and Manitoba, that figure climbs above 90%.<sup>3</sup> This is the bedrock of Canada's clean electricity story. It is also, increasingly, a structural vulnerability.</p>
-  <p>Hydro depends on precipitation. Reservoirs need rain and snowmelt to fill. When they don't, generation falls, and the grid has to find electricity somewhere else. In recent years, that somewhere else has largely been combustible fuels. In 2025, combustible fuel generation hit its highest level since Statistics Canada's current data series began in 2016. Hydro's share of total generation fell to a series low. Canada became a net electricity importer during multiple months of both 2024 and 2025, the first time this had occurred in the modern era.<sup>4</sup></p>
-  <p>These trends may not be one-off anomalies. They may be the early expression of something more structural: a gap in how Canada's grid was designed to handle stress.</p>
-  <p>The provincial picture makes this concrete. When a drought pushed BC Hydro into a generation deficit in 2024, the province covered roughly a quarter of its electricity demand through imports at a cost of approximately $1.38 billion, much of it drawn from Alberta's grid, which runs at nearly 75% natural gas.<sup>5</sup> Those emissions don't show up in British Columbia's official figures; provincial inventories only count what is generated within a province's borders, so the carbon embedded in the imports is effectively invisible in the accounting. Manitoba tells a related but different story: the province generates about 97% of its electricity from hydro, and rather than absorb that risk quietly, Manitoba Hydro has proposed a $3 billion natural gas facility at Brandon specifically to provide backup when water levels fall short.<sup>6</sup> Both cases point to the same underlying problem, just from different angles. One province is already reaching for high-carbon imports when hydro disappoints; the other is preparing to build the fossil infrastructure to avoid having to do the same.</p>
-  ${lineChartHTML('hydroLineChart')}
-  <div class="article-divider"></div>
-  <p>The deeper issue is not that hydro is unreliable in any absolute sense. Over a long enough period, Canadian watersheds are productive and the generation record is strong. The issue is that the grid was designed around hydro abundance, which means it has very little to fall back on when that abundance runs short. Fossil fuels exist in the system precisely to fill gaps that cleaner sources cannot. And when hydro disappoints, that is exactly what they do.</p>
-  <div class="article-pull">The cleanliness of Canadian electricity is, to a meaningful degree, a function of how much it has rained.</div>
-  <p>This creates an awkward reality at the heart of Canada's clean electricity story: the grid's low-emissions record is partly contingent on the weather. In dry years, the system quietly becomes more carbon-intensive, not because of any policy failure or bad decision, but because the backup capacity that exists is largely fossil-based.</p>
-  <p>That would be a manageable problem if the future looked like the recent past. It becomes harder to manage for two reasons.</p>
-  <p>The first is that the recent past may itself be changing. The years 2023 and 2025 both featured significant drought conditions and some of the lowest hydro generation on record.<sup>4</sup> Whether this reflects a short-term pattern or a longer-term shift in precipitation driven by climate change remains genuinely uncertain. But a grid strategy that treats hydro abundance as a baseline assumption is taking on risk it may not fully account for.</p>
-  <p>The second reason is electrification. Canada's federal government has committed to a net-zero electricity grid by 2050 and set binding emissions limits on generating units beginning in 2035.<sup>7</sup> Running alongside these targets is a sweeping push to move transportation, heating, and industry off fossil fuels, which requires substantially more electricity than Canada currently produces. The Canada Energy Regulator projects electricity demand will grow between 26% and 44% by 2050 relative to 2023 levels.<sup>8</sup></p>
-  <p>More demand on the same grid means more exposure to the same vulnerability. A drought that creates a manageable shortfall today becomes a much larger problem when the baseline load is 30 or 40% higher. Electrification, pursued without parallel investment in clean backup capacity, could leave Canada more dependent on fossil fuels precisely in the moments when the grid is under the most stress. It would reduce emissions in good years and increase them in bad ones.</p>
-  <div class="article-divider"></div>
-  <p>There is something worth sitting with in that picture. Canada is pursuing one of the most ambitious electricity transitions in its history, grounded in a genuine commitment to decarbonization. And yet the foundation that transition rests on has a known weak point: it performs well when the rain falls and less well when it doesn't. The federal government's clean electricity strategy is largely built around the assumption that hydro will continue to anchor the grid, supplemented over time by wind, solar, and eventually storage. That is a reasonable plan in its broad strokes. But it does not yet fully grapple with what happens in the years before that supplementary capacity is built, when demand has risen and the grid still relies on fossil fuels to fill whatever gap hydro leaves behind.</p>
-  <p>This is not an argument against electrification or against hydro. It is an argument for being honest about what the grid actually does when conditions turn difficult, and for building the clean alternatives that make the answer to that question something other than fossil fuels. The gap is real, it is measurable, and it is likely to widen before it narrows. Acknowledging it clearly is the first step toward closing it.</p>
-  <p>Canada's electricity sector has achieved something genuinely worth building on. The question now is whether the planning behind the net-zero transition is honest about the conditions under which that achievement holds, and the conditions under which it doesn't.</p>
-  <div class="footnotes">
-    <p class="footnotes-label">Further Reading</p>
-    <p><sup>1</sup> Environment and Climate Change Canada, National Inventory Report 1990–2023 (2025).</p>
-    <p><sup>2</sup> Natural Resources Canada, Powering Canada's Future: A Clean Electricity Strategy.</p>
-    <p><sup>3</sup> Statistics Canada, Table 25-10-0015-01; Canada Energy Regulator, Renewable Energy in Canada – British Columbia and Manitoba.</p>
-    <p><sup>4</sup> Statistics Canada, Electricity Year in Review 2025; Statistics Canada, Electricity Supply and Disposition, 2023 (released October 22, 2024).</p>
-    <p><sup>5</sup> BC Hydro, 2024/25 First Quarter Report; Canada Energy Regulator, Provincial and Territorial Energy Profiles – Alberta.</p>
-    <p><sup>6</sup> CBC News, November 21, 2025; Manitoba Hydro, Brandon Dispatchable Capacity Project.</p>
-    <p><sup>7</sup> Government of Canada, Clean Electricity Regulations (SOR/2024-263), finalized December 2024.</p>
-    <p><sup>8</sup> Canada Energy Regulator, Canada's Energy Future 2026: Executive Summary.</p>
-  </div>
-`;
 
-const barbenBody = `
-  <p>How do you summarize the seismic shifts shaping the entertainment industry today? "Unprecedented" would have been an acceptable answer some years ago, but streaming's disruption has had nearly a decade to become familiar. It has also long been touted as a theater-killer, though those predictions turned out to be premature. Rising ticket prices are pushing more audiences toward streaming giants like Netflix, yet blockbusters continue to secure Hollywood the viewership it needs to stay profitable. Slower dramas may struggle in the current theatrical climate, but films like Dune: Part Two or last summer's Oppenheimer and Barbie speak for themselves: the general audience's appetite for fresh spectacle and the biggest screens available to present it is still very much alive.</p>
-  <p>Alive, but not entirely well. The more interesting question isn't whether the blockbuster is dying — it isn't — but what it now takes to make one. The answer, as "Barbenheimer" demonstrated more vividly than anything else in recent memory, has changed considerably.</p>
-  <p>The cultural context matters here. Filmmaking equipment has been democratized, the internet has allowed creators to bypass traditional studio pipelines, and the sheer volume of content available at any given moment makes it genuinely difficult for any single release to dominate the conversation. Monolithic blockbusters are rarer not because audiences have stopped wanting them, but because the attention landscape has splintered. Not a fan of the latest action film? Ten thousand alternatives await you on Netflix. Cutting through that noise now requires something more than a large budget and a famous cast.</p>
-  <div class="article-divider"></div>
-  <p>What it requires, "Barbenheimer" showed, is engagement — and not the kind that traditional advertising reliably produces. The brilliance of that summer wasn't simply artistic; it was as much a feat of marketing instinct. Pairing a bubblegum entertainer like Barbie with a somber historical drama like Oppenheimer shouldn't have worked as a cultural moment, and yet it did, precisely because the contrast was irresistible. People didn't just watch both films; they talked about them, theorized about them, made memes about them. Instagram, Twitter, Snapchat, podcasts, news headlines: the conversation was everywhere, self-sustaining, and largely free.</p>
-  <div class="article-pull">Hollywood hadn't engineered a marketing campaign so much as a genuine cultural event — one that cut across demographic lines and culminated in two releases that together made nearly $2.3 billion.</div>
-  <p>Artistic quality gave both films the legs for extended runs. But it was that initial wave of organic engagement that made the runs possible in the first place.</p>
-  <p>The lesson, then, is not simply "make good films and market them on social media." Studios have been doing versions of that for years with mixed results. The deeper takeaway is about what kind of cultural conditions make a blockbuster possible, and how much of that can be intentionally created versus stumbled into. "Barbenheimer" succeeded partly because of shrewd positioning and partly because the moment was right: audiences were primed, the contrast was genuinely funny, and the discourse fed itself. That specific combination can't be manufactured on demand, and any studio that approaches the next release as a formula to be replicated will likely miss the point.</p>
-  <div class="article-divider"></div>
-  <p>What can be carried forward is the underlying orientation: an understanding that the audience now lives online, that organic conversation is more valuable than paid reach, and that the goal is to give people something worth talking about rather than something worth watching an ad for. The next blockbuster won't arrive on a billboard. It'll arrive when your coworkers bring it up unprompted, when the memes are already circulating before opening weekend, when even people who haven't seen it feel compelled to weigh in.</p>
-  <p>That kind of cultural saturation is difficult to manufacture — but "Barbenheimer" proved it is still possible. It just requires Hollywood to stop thinking like an advertiser and start thinking like the internet.</p>
-`;
+/* =============================================================================
+   TREE BUILDING
+============================================================================= */
 
-const briefLongBody = `
-  <h2>Summary</h2>
-  <p>Canada's electricity grid is quite clean due to a heavy reliance on hydro generation, but recent droughts have started to highlight a structural risk: when hydro generation drops, the system often falls back on fossil generation or imports to fill the shortfall. This is already visible in provinces like British Columbia and Manitoba, and it risks becoming more pronounced as electricity demand rises with electrification. The issue is not hydro itself, but the limited availability of reliable, non-emitting backup capacity and the fragmented structure of the national grid. Without expanding other clean energy sources, improving interprovincial transmission, and revising how grid planners account for hydro's weather-dependence, even short-term reductions in hydro output can lead to higher emissions if not offset by other clean sources. Over time, this could leave Canada structurally more dependent on fossil fuels during periods of supply pressure.</p>
+const children = new Map();
+const parentOf = new Map();
+const allNodes = new Set();
 
-  <h2>Introduction</h2>
-  <p>Canada's electricity sector has achieved several notable gains in its quest toward sustainability. Since 2005, greenhouse gas emissions from electricity generation have fallen by 58%, which is the single largest sectoral reduction in the Canadian economy over that period.<sup>1</sup> The grid that powers Canadian homes and industries is, in a normal year, over 80% non-emitting.<sup>2</sup> Historically, hydropower accounted for nearly 60% of the power grid.<sup>3</sup> In individual provinces like British Columbia and Manitoba, the contribution of hydro generation reaches 90% and beyond.<sup>4</sup></p>
-  <p>However, the past few years have shown why this dependence on hydro poses a vulnerability. The years 2023 and 2025 stand out in particular, both featuring droughts and some of the lowest hydro generation levels since Statistics Canada's current series began in 2016. Conversely, combustible fuel generation rose to its highest level since 2016 in 2025. Canada became a net electricity importer during multiple months of 2024 and 2025, the first time this had occurred in the current era.<sup>5</sup> This paper examines the pattern indicated by the data and finds that it reflects a structural risk: Canada's electricity system is highly reliant on hydro generation for meeting its clean energy goals, but hydro's variability and the absence of clean fallback solutions can contribute to increased reliance on fossil fuel generation. As the net-zero transition continues, accounting for variations in hydro generation while also diversifying beyond hydro can make the grid more reliable in delivering clean energy even when under pressure.</p>
+for (const [parent, child] of relationships) {
 
-  <h2>The Structural Risk</h2>
-  <p>The scale of the shift in the last few years is measurable. Canada's hydroelectric generation peaked at 392 TWh in 2017. By 2024 it had fallen to 341.8 TWh: a drop of roughly 50 TWh from that peak.<sup>6</sup> Expressed as a share of total generation, hydro fell from 61% in 2022 to just under 55% in 2025, a series low. At the same time, combustible fuels moved in the opposite direction, rising from 137.8 TWh in 2022 to a series-high 143.4 TWh in 2025.<sup>6</sup></p>
-  <p>A simple way to illustrate the scale of this vulnerability is to translate hydro variability into a supply shock. Using 2024 hydro generation of 341.8 TWh, a 10% decline would imply a shortfall of roughly 34.2 TWh.<sup>6</sup> That is about one-quarter of 2025 combustible-fuels generation (143.4 TWh), meaning even a moderate drought can create a gap large enough to require substantial replacement, which is currently often met by fossil generation or higher-emissions imports.</p>
-  ${lineChartHTML('briefLineChart')}
-  <p>British Columbia illustrates one version of this dynamic. The province generates the vast majority of its electricity from hydroelectric dams, with almost no domestic fossil backup. When Williston Reservoir inflows hit record lows, BC Hydro faced a generation deficit of 10,430 GWh and covered it by importing close to 25% of provincial electricity demand at a cost of approximately $1.38 billion.<sup>7</sup> A large share of those imports came from the United States and Alberta, whose grid ran at approximately 74.7% natural gas in 2024, with a carbon intensity more than four times the Canadian national average.<sup>8</sup> The result is a meaningful fossil footprint that is not reflected in provincial generation-based emissions accounting. Provincial emissions inventories count only what is generated within a province's borders, so the carbon embedded in those imports does not appear in BC's official figures. The $1.38 billion paid for imports is the financial record of a shortfall that likely increased reliance on fossil fuel generation outside the province.</p>
-  <p>Manitoba provides a more important example by showing how current decisions are reinforcing this systemic dynamic for the future. The province generates around 97% of its electricity from hydro.<sup>9</sup> This presently makes it one of the cleanest grids in Canada, but the concentration of hydro also means there is no domestic clean alternative when precipitation falls short. In response, Manitoba Hydro has proposed a $3 billion combustion turbine facility at Brandon, designed specifically to provide dispatchable backup when hydro is insufficient, with natural gas as the lowest-cost fuel option under consideration.<sup>10</sup> The utility's own planning documents describe this dispatchable capacity as "essential" to meeting demand through the next decade.<sup>11</sup></p>
-  <p>This measure is understandable today given that clean and renewable sources, while rapidly growing, still pose practical issues regarding costs and reliability. But this measure also reveals why clean alternatives must be proactively identified and developed. By turning to fossil fuels to cover the future shortfalls of hydro, the province starts creating a system that, when under pressure, leads to high emissions under stress conditions. Such design decisions sustain the presence of fossil fuels, making them recurrent players because the irregularity associated with hydro generation is a recurring issue.</p>
+    allNodes.add(parent);
+    allNodes.add(child);
 
-  <h2>Electrification and the Compounding Risk</h2>
-  <p>The risks outlined above are compounded by Canada's broader push toward electrification. Electrification is a key component of the federal government's environmental strategy. The Clean Electricity Regulations, finalized in December 2024, establish emission limits on electricity generating units beginning in 2035, with a net-zero grid target of 2050.<sup>12</sup> Running alongside this is a plan to move transportation, space heating, and industrial processes off fossil fuels and onto electricity, which will require substantially more electricity than Canada currently produces. The Canada Energy Regulator (CER) projects that electricity demand will grow between 26% and 44% by 2050 relative to 2023 levels.<sup>13</sup> BC Hydro's own filings project a 15% increase in provincial electricity demand by 2030 alone, driven by electric vehicles, population growth, and restrictions on natural gas for heating.<sup>14</sup></p>
-  <p>The problem is that this rising demand will land on a grid whose clean foundation has shown vulnerability under stress conditions. The below-average precipitation years demonstrated that a 10% drop in hydro output — consistent with what Statistics Canada recorded nationally in 2023 — leaves a gap of tens of terawatt-hours that the current system fills largely with fossil fuels.<sup>15</sup> CER scenario projections show that electricity demand will rise faster than hydro generation, which would make the grid more sensitive to future hydro declines simply because the baseline requirements are higher.<sup>13,16</sup> As total grid load grows with electrification, droughts of the same intensity can create a greater shortfall and require an earlier intervention from other sources. As it stands today, these other sources largely consist of fossil fuels. In short, while electrification remains essential for decarbonization overall, without parallel expansion of reliable clean capacity, it may increase reliance on fossil fuels during supply stress.</p>
-  ${projChartHTML('briefProjChart')}
+    parentOf.set(child, parent);
 
-  <h2>Possible Solutions</h2>
-  <p>While hydroelectricity has a crucial role to play, a lack of attention has been given to clean sources that replace hydro when it underperforms. To be sure, fossil fuels are an appropriate solution in some cases, but presently they are a common fallback solution. Besides expanding the storage capacity of wind and solar and funding clean yet relatively undeveloped sources like geothermal energy,<sup>17</sup> there are two other key steps that can be begun immediately to resolve this issue.</p>
-  <p>The first concerns geographic fragmentation. Hydro conditions across Canada are not uniform. A drought affecting British Columbia's reservoirs may not affect Quebec's or Manitoba's to the same extent in the same year. Moreover, provinces like New Brunswick and Ontario (with its nuclear plants) can supply clean energy from sources other than hydro. A grid with sufficient interprovincial transmission capacity could allow clean surplus generation in one region to cover deficits in another, reducing the need for provinces to turn to fossil fuels when their own hydro underperforms. At present, Canada operates three largely separate regional grids — Western, Eastern, and Québec — with limited east-west interconnection, and provinces trade more electricity with US states than with each other.<sup>19</sup> Modelling by the Canada Electricity Advisory Council and the Canadian Climate Institute suggests that expanded interprovincial interties could reduce system-wide emissions and lower industrial electricity prices, while also increasing resilience to precisely the kind of regional supply stress seen in recent drought years.<sup>20</sup></p>
-  <p>Energy policy largely falls under the jurisdiction of provinces, and so implementing the first measure would require addressing two key provincial concerns: cost burdens and a loss of flexibility.<sup>22</sup> Because transmission investments are evaluated primarily on provincial cost-benefit grounds — even when their largest gains are national — provinces have limited incentive to build interties on their own, which makes federal financing and coordination essential. At the same time, there must be room for provincial governments to make tailored contracts that align with their specific economic and environmental goals.</p>
-  <p>The second response does not require new infrastructure but a change in planning assumptions. Utilities and regulators have often treated hydro as highly reliable firm capacity, but greater attention must be given to hydrological variability. Under that assumption, utilities and regulators have had little reason to require non-fossil backup capacity for drought scenarios, since hydro was not expected to fail. The 2023–2025 data challenge that assumption, and the Clean Electricity Regulations have begun to reflect it: one of the regulatory flexibilities explicitly included is the ability for electricity units to bank compliance credits for use in drought years when hydro falls short.<sup>21</sup> If grid planning frameworks followed the same logic and accounted for hydro's variability in drought scenarios, the consequence can be direct: utilities would be required to secure non-fossil backup for periods when hydro underperforms, rather than defaulting to the cheapest dispatchable generation when a drought arrives. That is the condition under which fossil fuels currently fill the gap, and changing the planning assumption can meaningfully change it.</p>
+    if (!children.has(parent)) {
+        children.set(parent, []);
+    }
 
-  <h2>Conclusion</h2>
-  <p>Canada's electricity grid is cleaner than most, and the progress made since 2005 is substantial. Recent years, however, indicate that this performance is partly contingent on hydroelectric availability. Periods of reduced precipitation have coincided with increased fossil fuel generation and imports, consistent with a grid that lacks sufficient clean alternatives when hydro underperforms. British Columbia covered a quarter of its demand through high-carbon imports during low-water conditions, while Manitoba has proposed new dispatchable gas capacity to address similar risks going forward. These are not isolated decisions but expressions of an underlying design gap that should be addressed as the transition to clean energy continues. Electrification is likely to place greater pressure on that gap by raising the overall load that must be met when hydro falls short. Addressing it will require expanding non-emitting generation capacity, strengthening interprovincial transmission so that clean surpluses in one basin can cover deficits in another, and revising the planning assumption that hydro will always deliver.</p>
+    children.get(parent).push(child);
+}
 
-  <div class="footnotes">
-    <p class="footnotes-label">Sources</p>
-    <p><sup>1</sup> Environment and Climate Change Canada. National Inventory Report 1990–2023: Greenhouse Gas Sources and Sinks in Canada (2025). canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html</p>
-    <p><sup>2</sup> Natural Resources Canada. Powering Canada's Future: A Clean Electricity Strategy. natural-resources.canada.ca/energy-sources/powering-canada-s-future-clean-electricity-strategy</p>
-    <p><sup>3</sup> Statistics Canada. Electric Power Generation, Monthly Generation by Type of Electricity, Table 25-10-0015-01. Hydro share: 61.3% in 2022. statcan.gc.ca</p>
-    <p><sup>4</sup> Canada Energy Regulator. Renewable Energy in Canada – British Columbia; Renewable Energy in Canada – Manitoba. cer-rec.gc.ca</p>
-    <p><sup>5</sup> Statistics Canada. Electricity Generation from Combustibles and Renewables Sharply Increase Amid Another Dry Year: Electricity Year in Review 2025. statcan.gc.ca/o1/en/plus/9117</p>
-    <p><sup>6</sup> Statistics Canada. Table 25-10-0015-01 / Electricity Year in Review 2025. Hydro: 392.2 TWh (2017 peak), 341.8 TWh (2024); combustibles: 137.8 TWh (2022), 143.4 TWh (2025 series high). The 34.2 TWh shortfall figure is derived from the 2024 hydro total using a 10% decline assumption consistent with the 2023 national decline recorded by Statistics Canada.</p>
-    <p><sup>7</sup> BC Hydro. 2024/25 First Quarter Report. bchydro.com; Energy Futures Institute / BC Utilities Commission documents filed by BC Hydro, reported by Business in Vancouver, December 2, 2024. biv.com</p>
-    <p><sup>8</sup> Energy Futures Institute / BC Utilities Commission documents filed by BC Hydro, reported by Business in Vancouver, December 2, 2024; Global News, November 29, 2024; Canada Energy Regulator, Provincial and Territorial Energy Profiles – Alberta. cer-rec.gc.ca (Alberta carbon intensity 470 g CO₂e/kWh vs. 100 g national average; Alberta gas share 74.7% in 2024).</p>
-    <p><sup>9</sup> Canada Energy Regulator. Renewable Energy in Canada – Manitoba. cer-rec.gc.ca. Hydro: 96.9% of generation in 2023.</p>
-    <p><sup>10</sup> CBC News, November 21, 2025; CBC News, February 27, 2025.</p>
-    <p><sup>11</sup> Manitoba Hydro. Brandon Dispatchable Capacity Project. hydro.mb.ca/community/engagement/brandon-dispatchable-capacity</p>
-    <p><sup>12</sup> Government of Canada. Clean Electricity Regulations (SOR/2024-263), finalized December 2024. Emission limits on generating units apply from 2035; net-zero grid target is 2050. canada.ca/en/environment-climate-change/corporate/transparency/strategic-environmental-economic-assessments/clean-electricity-regulations</p>
-    <p><sup>13</sup> Canada Energy Regulator. Canada's Energy Future 2026: Executive Summary. cer-rec.gc.ca. Electricity demand grows 26% (Lower scenario) to 44% (Current Measures) from 2023 to 2050.</p>
-    <p><sup>14</sup> Energy Futures Institute / BC Utilities Commission documents filed by BC Hydro, reported by Business in Vancouver, December 2, 2024.</p>
-    <p><sup>15</sup> Statistics Canada. Electricity Supply and Disposition, 2023, released October 22, 2024. National hydro generation fell 9.3% year-over-year. statcan.gc.ca</p>
-    <p><sup>16</sup> Canada Energy Regulator. Canada's Energy Future 2023, Current Measures scenario: hydro ~440 TWh by 2050; total generation ~973 TWh. cer-rec.gc.ca; Statistics Canada, Table 25-10-0015-01 for 2025 baseline.</p>
-    <p><sup>17</sup> Canada Energy Regulator. Market Snapshot: Geothermal Power is Stable and Low Carbon, but What is its Potential in Canada? cer-rec.gc.ca; RBC Climate Action Institute / Canadian Geothermal Energy Association. Geothermal Energy Surges: Canada's Potential in a Promising Baseload Power Source (2026). rbc.com</p>
-    <p><sup>18</sup> Ontario Power Generation. Darlington SMR Project. opg.com; NB Power. Advanced Small Modular Reactors. nbpower.com</p>
-    <p><sup>19</sup> Canadian Climate Institute. Connecting Regional Electricity Grids in Canada (2025). climateinstitute.ca</p>
-    <p><sup>20</sup> Canada Electricity Advisory Council. Powering Canada: A Blueprint for Success (May 2024). natural-resources.canada.ca</p>
-    <p><sup>21</sup> Government of Canada. Clean Electricity Regulations: Maintaining Reliability. canada.ca/en/services/environment/weather/climatechange/climate-plan/clean-electricity/regulations-reliability.html</p>
-    <p><sup>22</sup> Canadian Climate Institute. How Canada Can Build Electricity Transmission to Unlock Nation-Building Projects (2025). climateinstitute.ca</p>
-  </div>
-`;
+/*
+    Root node = node with no parent.
+*/
 
-const briefShortBody = `
-  <h2>Executive Summary</h2>
-  <p>Canada's electricity system is among the cleanest in the world, largely because of its heavy reliance on hydroelectricity.<sup>1</sup> But recent droughts have revealed a structural vulnerability: when hydro output falls, provinces often turn to increased fossil fuel generation or high-emitting imports to fill the gap.<sup>2,3</sup> This pattern is already visible in British Columbia and Manitoba, and it risks becoming more pronounced as electrification drives electricity demand higher.<sup>4</sup></p>
-  <p>This brief argues that to effectively secure Canada's net-zero electricity transition, governments and utilities must do three things: expand clean dispatchable backup capacity, strengthen interprovincial transmission, and revise planning assumptions to reflect hydro's constraints and exposure to variability. Without these changes, shortfalls in hydro generation may continue to push emissions higher during periods of supply stress.<sup>3,5</sup> As the net-zero transition continues, accounting for variations in hydro generation while also diversifying beyond hydro can make the grid more reliable in delivering clean energy even when under pressure.</p>
-  ${lineChartHTML('shortLineChart')}
+const root = [...allNodes].find(node => !parentOf.has(node));
 
-  <h2>Policy Recommendations</h2>
-  <p>Federal and provincial decision-makers should align electricity planning with hydro variability by:</p>
-  <div class="rec-box"><strong>Expanding non-emitting backup capacity</strong><p>Including storage, geothermal, and other firm low-carbon resources that can cover multi-month drought periods that wind and solar alone cannot reliably bridge.<sup>6</sup></p></div>
-  <div class="rec-box"><strong>Building stronger interprovincial transmission links</strong><p>So clean electricity can move across regions when local hydro basins are stressed, reducing dependence on high-emitting imports.<sup>7</sup></p></div>
-  <div class="rec-box"><strong>Updating planning and regulatory assumptions</strong><p>To require utilities to prepare for drought years without defaulting to fossil fuels — following the logic already embedded in the Clean Electricity Regulations' drought-year credit provisions.<sup>8</sup></p></div>
 
-  <h2>Problem Statement</h2>
-  <p>Canada has made real progress decarbonizing its electricity sector. Since 2005, greenhouse gas emissions from electricity generation have fallen sharply, and the grid now runs over 80% non-emitting in a normal year.<sup>9,10</sup> Much of that comes from hydroelectricity, which supplies nearly 60% of national electricity — and in provinces like British Columbia and Manitoba, 90% or more.<sup>1,11</sup></p>
-  <p>The problem is that hydro is not immune to climate stress. In recent years, below-normal precipitation and drought have reduced hydro output across Canada. In 2025, combustible fuel generation reached its highest level since 2016, while hydro's share of total generation fell to a series low, which together highlight growing system stress. Canada also became a net electricity importer during multiple months in 2024 and 2025 — the first time this had happened in the current era.<sup>2,3</sup> These trends may not be one-off anomalies because the grid is built around hydro abundance and has limited clean options when that abundance runs short.</p>
-  <p>The core problem is not hydro itself. It is that Canada has not developed enough clean backup capacity to replace hydro when it underperforms. When that gap opens, fossil fuels and imports become the default.</p>
+/* =============================================================================
+   TREE LAYOUT
+===============================================================================
 
-  <h2>The Structural Risk</h2>
-  <p>The scale of the vulnerability is measurable. Canada's hydroelectric generation peaked at 392 TWh in 2017 and fell to 341.8 TWh in 2024. A 10% decline from that level would create a shortfall of roughly 34.2 TWh — about one-quarter of 2025 combustible-fuels generation. Even moderate droughts can create supply shortages large enough to require substantial fossil replacement.<sup>3</sup></p>
-  <p>British Columbia illustrates the problem clearly. During low-water conditions, BC Hydro covered close to a quarter of provincial electricity demand through imports, at a cost of about $1.38 billion.<sup>12</sup> Much of that imported electricity came from Alberta and the United States, where generation is substantially more carbon-intensive than in Canada's hydro-heavy provinces.<sup>13</sup> Because emissions inventories count only in-province generation, the emissions associated with those imports are not fully visible in provincial totals.</p>
-  <p>Manitoba shows how this problem can become locked into future planning. The province relies on hydro for about 97% of its generation, leaving little domestic clean backup when precipitation is low.<sup>14</sup> Manitoba Hydro has proposed a $3 billion combustion turbine facility at Brandon to provide dispatchable backup, with natural gas as the lowest-cost fuel option under consideration.<sup>15,16</sup> Since hydro shortfalls are a recurring risk, dependence on fossil fuels to compensate for them risks turning what should be an emergency measure into a structural feature of the grid.</p>
+Recursive tidy-tree style layout.
 
-  <h2>Why Electrification Makes the Problem More Urgent</h2>
-  <p>Canada's electrification push is the right long-term direction. The Clean Electricity Regulations, finalized in December 2024, set emission limits on generating units beginning in 2035, with a net-zero grid target of 2050.<sup>17</sup> The Canada Energy Regulator projects electricity demand growth of 26% to 44% by 2050, and BC Hydro expects significant provincial demand increases by 2030 driven by electric vehicles, heating electrification, and population growth.<sup>4,18</sup></p>
-  <p>The concern is not the direction — it's the timing and the gap. Rising demand increases the cost of hydro shortfalls. A drought that caused manageable disruption in the past may require far larger amounts of replacement generation as total load grows.<sup>4,19</sup> If that replacement still comes mainly from fossil fuels, electrification can unintentionally push emissions up during stress periods even as it reduces them over the long run.</p>
-  <p>The core risk is not that electrification is the wrong strategy. The risk is that electrification is being pursued faster than the clean system needed to support it. Without parallel investment in clean backup and grid integration, Canada may become more dependent on fossil fuels when hydro generation weakens.</p>
-  ${projChartHTML('shortProjChart')}
+RULES:
+    - leaves get sequential x slots
+    - parents center over descendants
 
-  <h2>Conclusion</h2>
-  <p>Canada's grid is cleaner than most, but its low-emissions record depends heavily on hydro availability. When hydro underperforms, the system often falls back on fossil generation and imports. British Columbia and Manitoba illustrate that this isn't a temporary anomaly — it's a structural design problem, one that electrification will make more consequential as overall electricity demand grows.</p>
-  <p>The answer is not to slow electrification. It is to build the grid capable of supporting it under stress. That means clean backup capacity that doesn't depend on rain, transmission infrastructure that lets clean electricity move to where it's needed, and planning rules that stop treating hydro as a guaranteed resource. Without such changes, Canada's electricity system risks remaining clean in good years and more fossil-dependent when conditions turn difficult.</p>
+This creates stable readable hierarchy geometry.
 
-  <div class="footnotes">
-    <p class="footnotes-label">Sources</p>
-    <p><sup>1</sup> Statistics Canada. Electric Power Generation, Monthly Generation by Type of Electricity, Table 25-10-0015-01. statcan.gc.ca</p>
-    <p><sup>2</sup> Statistics Canada. Electricity Generation from Combustibles and Renewables Sharply Increase Amid Another Dry Year: Electricity Year in Review 2025. statcan.gc.ca/o1/en/plus/9117</p>
-    <p><sup>3</sup> Statistics Canada. Table 25-10-0015-01 / Electricity Year in Review 2025. Hydro: 392.2 TWh (2017 peak), 341.8 TWh (2024); combustibles: 137.8 TWh (2022), 143.4 TWh (2025 series high). The 34.2 TWh shortfall figure is derived from the 2024 hydro total using a 10% decline assumption consistent with the 9.3% national decline recorded by Statistics Canada in 2023.</p>
-    <p><sup>4</sup> Canada Energy Regulator. Canada's Energy Future 2026: Executive Summary. cer-rec.gc.ca. Electricity demand projected to grow 26% (Lower scenario) to 44% (Current Measures) from 2023 to 2050.</p>
-    <p><sup>5</sup> Statistics Canada. Electricity Supply and Disposition, 2023, released October 22, 2024. National hydro generation fell 9.3% year-over-year. statcan.gc.ca</p>
-    <p><sup>6</sup> Canada Energy Regulator. Market Snapshot: Geothermal Power is Stable and Low Carbon, but What is its Potential in Canada? cer-rec.gc.ca; RBC Climate Action Institute / Canadian Geothermal Energy Association. Geothermal Energy Surges: Canada's Potential in a Promising Baseload Power Source (2026). rbc.com</p>
-    <p><sup>7</sup> Canadian Climate Institute. Connecting Regional Electricity Grids in Canada (2025). climateinstitute.ca</p>
-    <p><sup>8</sup> Government of Canada. Clean Electricity Regulations: Maintaining Reliability. canada.ca/en/services/environment/weather/climatechange/climate-plan/clean-electricity/regulations-reliability.html</p>
-    <p><sup>9</sup> Environment and Climate Change Canada. National Inventory Report 1990–2023: Greenhouse Gas Sources and Sinks in Canada (2025). canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html</p>
-    <p><sup>10</sup> Natural Resources Canada. Powering Canada's Future: A Clean Electricity Strategy. natural-resources.canada.ca/energy-sources/powering-canada-s-future-clean-electricity-strategy</p>
-    <p><sup>11</sup> Canada Energy Regulator. Renewable Energy in Canada – British Columbia; Renewable Energy in Canada – Manitoba. cer-rec.gc.ca</p>
-    <p><sup>12</sup> BC Hydro. 2024/25 First Quarter Report. bchydro.com; Global News, November 29, 2024. BC Hydro imported approximately 13,600 GWh in fiscal year 2024, about 25% of total provincial power, at a cost of nearly $1.4 billion per BC Utilities Commission documents.</p>
-    <p><sup>13</sup> Energy Futures Institute / BC Utilities Commission documents filed by BC Hydro, reported by Business in Vancouver, December 2, 2024; Global News, November 29, 2024; Canada Energy Regulator, Provincial and Territorial Energy Profiles – Alberta. cer-rec.gc.ca. Alberta carbon intensity: 470 g CO₂e/kWh vs. 100 g national average; Alberta gas share approximately 74.7% in 2024.</p>
-    <p><sup>14</sup> Canada Energy Regulator. Renewable Energy in Canada – Manitoba. cer-rec.gc.ca. Hydro: 96.9% of generation in 2023.</p>
-    <p><sup>15</sup> CBC News, November 21, 2025; CBC News, February 27, 2025.</p>
-    <p><sup>16</sup> Manitoba Hydro. Brandon Dispatchable Capacity Project. hydro.mb.ca/community/engagement/brandon-dispatchable-capacity</p>
-    <p><sup>17</sup> Government of Canada. Clean Electricity Regulations (SOR/2024-263), finalized December 2024. Emission limits on generating units apply from 2035; net-zero grid target is 2050. canada.ca/en/environment-climate-change/corporate/transparency/strategic-environmental-economic-assessments/clean-electricity-regulations</p>
-    <p><sup>18</sup> Energy Futures Institute / BC Utilities Commission documents filed by BC Hydro, reported by Business in Vancouver, December 2, 2024.</p>
-    <p><sup>19</sup> Canada Energy Regulator. Canada's Energy Future 2023, Current Measures scenario. cer-rec.gc.ca; Statistics Canada, Table 25-10-0015-01.</p>
-    <p><sup>20</sup> Canadian Climate Institute. How Canada Can Build Electricity Transmission to Unlock Nation-Building Projects (2025). climateinstitute.ca</p>
-    <p><sup>21</sup> RBC Climate Action Institute / Canadian Geothermal Energy Association. Geothermal Energy Surges: Canada's Potential in a Promising Baseload Power Source (2026). rbc.com</p>
-  </div>
-`;
+============================================================================= */
 
-const commercialBody = `
-<div class="article-links">
-  <button class="article-link-btn" onclick="showArticle('barbenheimer')">
-    Back to Article
-  </button>
-</div>
+const positions = new Map();
 
-<p><strong>FORMAT:</strong> 45-second commercial script</p>
-<p><strong>PRODUCT CATEGORY:</strong> Healthcare / Diabetes Management</p>
-<p><strong>NARRATIVE APPROACH:</strong> Problem-agitation-solution, following a patient's daily struggle with medication fatigue and energy depletion, culminating in product discovery and lifestyle improvement.</p>
+let leafIndex = 0;
 
-<h2>Script</h2>
+function layout(node, depth) {
 
-<div style="background: var(--white); border: 1px solid var(--rule); padding: 1.4rem; margin: 1.5rem 0; font-family: 'Source Serif 4', Georgia, serif;">
+    const kids = children.get(node) || [];
 
-<p><strong>0:00–0:07 | OPENING VIGNETTE – BATHROOM + CAR</strong></p>
-<p>Close on a glucose monitor sitting on the counter. Beside it, a jar of diabetes pills. The reading is already on screen. A MAN stands in front of it: middle-aged, quiet. He sighs slowly.</p>
-<p><em>VO: Always the same beginning.</em></p>
-<p>Cut to: he drives in silence. His phone lights up.</p>
-<p><em>PHONE NOTIFICATION: Reminder! Medication in 2 hours.</em></p>
-<p>He glances down. Another sigh. He keeps driving.</p>
+    if (kids.length === 0) {
 
-<p style="margin-top: 1.2rem;"><strong>0:07–0:17 | OFFICE – DAY</strong></p>
-<p>The MAN stands by a water dispenser, mid-conversation with a coworker. He is trying to stay engaged.</p>
-<p><em>MAN: And then I told him–</em></p>
-<p>He pauses, out of breath. His phone lights up in his pocket.</p>
-<p><em>PHONE NOTIFICATION: Reminder! Take your medication.</em></p>
-<p>He looks up. Apologetic smile.</p>
-<p><em>MAN: Excuse me.</em></p>
-<p>He returns to his desk and takes his medication with a sip of water. Fatigue is settling in.</p>
-<p><em>VO: Tired, even when you're doing everything right?</em></p>
-<p>He notices something on a coworker's desk: a jar of diabetes medication and, beside it, [PRODUCT]. The desk's nameplate reads: SHARMA.</p>
-<p>Off-screen, laughter. The man turns. Sharma stands relaxed and energized at the center of a small group.</p>
-<p><em>COWORKER: You make it look easy.</em></p>
-<p>The MAN looks back at [PRODUCT]. He types the name into his computer, considers what he's seeing, and –</p>
-<p><em>VO: Maybe what you need is a boost.</em></p>
-<p>– clicks to order.</p>
+        positions.set(node, {
+            x: leafIndex++,
+            y: depth
+        });
 
-<p style="margin-top: 1.2rem;"><strong>0:17–0:19 | HOME – FRONT DOOR</strong></p>
-<p>A brief shot: the package arrives at the door. The MAN picks it up.</p>
+        return;
+    }
 
-<p style="margin-top: 1.2rem;"><strong>0:19–0:27 | TABLE – PRODUCT ADVERTISEMENT SEQUENCE</strong></p>
-<p>The product sits on a table in front of the MAN.</p>
-<p>Close on the table with a top-down angle. We begin a clean product sequence.</p>
-<p><em>PLACEHOLDER: Direct product advertisement.</em></p>
-<ul style="margin: 0.8rem 0 0.8rem 1.2rem;">
-<li>Pack shot – Key benefits and feature callouts</li>
-<li>Ingredient or value highlights</li>
-<li>Short proof points or usage guidance</li>
-</ul>
-<p><em>VO: Clear. Direct. Built to show what makes [PRODUCT] useful and different.</em></p>
-<p><em>TEXT ON SCREEN: [Benefit 1] [Benefit 2] [Benefit 3]</em></p>
-<p>The sequence resolves. We return to the MAN sitting at the table, looking at the product in front of him.</p>
+    const start = leafIndex;
 
-<p style="margin-top: 1.2rem;"><strong>0:27–0:40 | CLOSING MONTAGE – EVENING INTO MORNING</strong></p>
-<p>Evening. The man takes [PRODUCT]. On the couch with family, calmer, more present.</p>
-<p>Next morning. He's in his car again. His phone lights up. He glances at it and then sets it down. No sigh. A faint smile.</p>
-<p>Bathroom. The same counter as before. The camera pans to show the [PRODUCT] now sitting alongside the diabetes medication. The man looks at it, then at himself in the mirror.</p>
-<p><em>VO: Because managing your condition shouldn't mean running on empty.</em></p>
-<p><em>TEXT ON SCREEN: More Energy. More Balance. More Life.</em></p>
+    for (const child of kids) {
+        layout(child, depth + 1);
+    }
 
-<p style="margin-top: 1.2rem;"><strong>0:40–0:45 | END CARD</strong></p>
-<p><em>VO: Try [PRODUCT] today.</em></p>
-<p><em>TEXT ON SCREEN: Learn more about [PRODUCT].</em></p>
-<p><em>CTA BUTTON / LINK: Shop Now | Learn More | Visit Website</em></p>
+    const end = leafIndex - 1;
 
-</div>
+    positions.set(node, {
+        x: (start + end) / 2,
+        y: depth
+    });
+}
 
-<h2>Key Creative Elements</h2>
-<p><strong>Narrative Structure:</strong> The script follows a classic problem-agitation-solution arc. The opening establishes the patient's daily routine and fatigue; the middle section heightens the emotional tension through a contrast (the energized coworker); the resolution shows both immediate relief and lasting lifestyle change.</p>
+layout(root, 0);
 
-<p><strong>Visual Storytelling:</strong> Repetition is used strategically — the bathroom counter, the car, the desk notifications — to reinforce the relentless nature of disease management. The final mirror scene echoes the opening but with a subtle shift in tone, signaling internal change without dialogue.</p>
 
-<p><strong>Tone:</strong> The piece avoids both clinical detachment and saccharine uplift. Instead, it grounds the narrative in quiet, recognizable moments of fatigue and social friction, making the product's arrival feel like genuine relief rather than miraculous transformation.</p>
+/* =============================================================================
+   CHART DIMENSIONS
+============================================================================= */
 
-<p><strong>Call to Action:</strong> The script leaves the CTA flexible to accommodate different media contexts (e-commerce, web, social). The focus remains on emotional resonance over aggressive selling.</p>
-`;
+const maxDepth = Math.max(
+    ...[...positions.values()].map(p => p.y)
+);
 
-/* ── ARTICLES MAP ── */
-const articles = {
-  hydro:       { meta:'Op-Ed · Energy Policy',      title:"Canada's Clean Grid Has a Rainy-Day Problem",                                               body: hydroBody },
-  barbenheimer:{ meta:'Essay · Culture & Media',     title:'The Anatomy of Barbenheimer as a Phenomenon and Lesson',                                    body: barbenBody },
-  'brief-long': { meta:'Policy Brief · Energy & Climate', title:'The Hydro-Emissions Tension: Addressing Structural Vulnerabilities in Canada\'s Net-Zero Transition — Long Version', body: briefLongBody },
-  'brief-short':{ meta:'Policy Brief · Energy & Climate', title:'The Hydro-Emissions Tension: Addressing Structural Vulnerabilities in Canada\'s Net-Zero Transition — Short Brief',   body: briefShortBody }
+const chartWidth =
+    CONFIG.paddingX * 2 +
+    Math.max(0, (leafIndex - 1) * CONFIG.xGap) +
+    CONFIG.nodeWidth;
+
+const chartHeight =
+    CONFIG.paddingY * 2 +
+    maxDepth * CONFIG.yGap +
+    CONFIG.nodeHeight;
+
+world.style.width = chartWidth + "px";
+world.style.height = chartHeight + "px";
+
+svg.setAttribute("width", chartWidth);
+svg.setAttribute("height", chartHeight);
+svg.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
+
+
+/* =============================================================================
+   POSITION HELPERS
+============================================================================= */
+
+function xOf(name) {
+    return CONFIG.paddingX +
+           positions.get(name).x * CONFIG.xGap;
+}
+
+function yOf(name) {
+    return CONFIG.paddingY +
+           positions.get(name).y * CONFIG.yGap;
+}
+
+
+/* =============================================================================
+   NODE HELPERS
+============================================================================= */
+
+function signClass(name) {
+
+    if (name === "Founding Father") {
+        return "Founding";
+    }
+
+    return name.split(" ")[0];
+}
+
+
+/* =============================================================================
+   RENDER NODES
+============================================================================= */
+
+function renderNodes() {
+
+    nodesLayer.innerHTML = "";
+
+    for (const name of allNodes) {
+
+        const node = document.createElement("div");
+
+        node.className =
+            `node ${signClass(name)}`;
+
+        node.textContent = name;
+
+        node.style.left = xOf(name) + "px";
+        node.style.top = yOf(name) + "px";
+
+        nodesLayer.appendChild(node);
+    }
+}
+
+
+/* =============================================================================
+   RENDER EDGES
+===============================================================================
+
+KEY IDEA:
+
+Each parent gets ONE shared horizontal bus.
+
+BAD:
+    parent -> child
+    parent -> child
+    parent -> child
+
+GOOD:
+            Parent
+               |
+        ----------------
+        |      |       |
+       C1     C2      C3
+
+This prevents line chaos.
+
+============================================================================= */
+
+function renderEdges() {
+
+    svg.innerHTML = "";
+
+    const grouped = new Map();
+
+    for (const [parent, child] of relationships) {
+
+        if (!grouped.has(parent)) {
+            grouped.set(parent, []);
+        }
+
+        grouped.get(parent).push(child);
+    }
+
+    for (const [parent, kids] of grouped) {
+
+        const px = xOf(parent);
+
+        const pyBottom =
+            yOf(parent) + CONFIG.nodeHeight;
+
+        const busY =
+            pyBottom + CONFIG.busGap;
+
+        const childXs = kids.map(xOf);
+
+        const minX = Math.min(...childXs);
+        const maxX = Math.max(...childXs);
+
+        const g =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "g"
+            );
+
+        g.setAttribute("stroke", "rgba(70,70,70,0.9)");
+        g.setAttribute("stroke-width", "2");
+        g.setAttribute("fill", "none");
+
+        /*
+            Parent trunk + shared bus.
+        */
+
+        const trunk =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "path"
+            );
+
+        if (kids.length > 1) {
+
+            trunk.setAttribute(
+                "d",
+                `
+                M ${px} ${pyBottom}
+                V ${busY}
+                H ${minX}
+                H ${maxX}
+                `
+            );
+
+        } else {
+
+            trunk.setAttribute(
+                "d",
+                `
+                M ${px} ${pyBottom}
+                V ${busY}
+                H ${childXs[0]}
+                `
+            );
+        }
+
+        g.appendChild(trunk);
+
+        /*
+            Vertical child drops.
+        */
+
+        for (const child of kids) {
+
+            const cx = xOf(child);
+
+            const cyTop = yOf(child);
+
+            const drop =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "path"
+                );
+
+            drop.setAttribute(
+                "d",
+                `
+                M ${cx} ${busY}
+                V ${cyTop}
+                `
+            );
+
+            g.appendChild(drop);
+        }
+
+        svg.appendChild(g);
+    }
+}
+
+
+/* =============================================================================
+   INITIAL RENDER
+============================================================================= */
+
+renderNodes();
+renderEdges();
+
+
+/* =============================================================================
+   CAMERA SYSTEM
+===============================================================================
+
+The camera:
+    - pans
+    - zooms
+
+The WORLD never changes internal geometry.
+
+This is the scalable architecture used by:
+    - diagram editors
+    - CAD software
+    - whiteboard tools
+    - graph visualization systems
+
+============================================================================= */
+
+const camera = {
+
+    x: 0,
+    y: 0,
+    zoom: 1
 };
 
-/* ── CHART REGISTRY ── */
-let charts = {};
-function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
+function updateCamera() {
 
-function buildCharts(id) {
-  setTimeout(() => {
-    if (id === 'hydro') {
-      const el = document.getElementById('hydroLineChart');
-      if (el) charts.hydroLine = new Chart(el, makeLineConfig());
-    }
-    if (id === 'brief-long') {
-      const el1 = document.getElementById('briefLineChart');
-      if (el1) charts.briefLine = new Chart(el1, makeLineConfig());
-      const el2 = document.getElementById('briefProjChart');
-      if (el2) charts.briefProj = new Chart(el2, JSON.parse(JSON.stringify(projConfig)));
-    }
-    if (id === 'brief-short') {
-      const el1 = document.getElementById('shortLineChart');
-      if (el1) charts.shortLine = new Chart(el1, makeLineConfig());
-      const el2 = document.getElementById('shortProjChart');
-      if (el2) charts.shortProj = new Chart(el2, JSON.parse(JSON.stringify(projConfig)));
-    }
-  }, 60);
+    /*
+        Integer snapping helps keep text sharper.
+    */
+
+    const tx = Math.round(camera.x);
+    const ty = Math.round(camera.y);
+
+    world.style.transform =
+        `translate3d(${tx}px, ${ty}px, 0)
+         scale(${camera.zoom})`;
 }
 
-/* ── NAVIGATION ── */
-function showLanding() {
-  destroyCharts();
-  document.getElementById('landing').classList.add('active');
-  document.getElementById('article-view').classList.remove('active');
-  document.getElementById('nav-label').textContent = 'Writing Samples';
-  window.scrollTo(0,0);
+
+/* =============================================================================
+   CENTER INITIAL VIEW
+============================================================================= */
+
+function centerView() {
+
+    const sceneRect =
+        scene.getBoundingClientRect();
+
+    const rootX = xOf(root);
+
+    camera.zoom = 1;
+
+    camera.x =
+        sceneRect.width / 2 -
+        rootX * camera.zoom;
+
+    camera.y = 40;
+
+    updateCamera();
 }
 
-function showArticle(id) {
-  destroyCharts();
-  const a = articles[id];
-  if (!a) return;
-  document.getElementById('article-meta').textContent = a.meta;
-  document.getElementById('article-title').textContent = a.title;
-  document.getElementById('article-body').innerHTML = a.body;
-  document.getElementById('nav-label').textContent = '';
-  document.getElementById('landing').classList.remove('active');
-  document.getElementById('article-view').classList.add('active');
-  window.scrollTo(0,0);
-  buildCharts(id);
+centerView();
+
+
+/* =============================================================================
+   PANNING
+============================================================================= */
+
+let dragging = false;
+
+let dragStartX = 0;
+let dragStartY = 0;
+
+let startCamX = 0;
+let startCamY = 0;
+
+scene.addEventListener("pointerdown", e => {
+
+    if (e.button !== 0) return;
+
+    dragging = true;
+
+    scene.classList.add("dragging");
+
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+
+    startCamX = camera.x;
+    startCamY = camera.y;
+
+    scene.setPointerCapture(e.pointerId);
+});
+
+scene.addEventListener("pointermove", e => {
+
+    if (!dragging) return;
+
+    camera.x =
+        startCamX +
+        (e.clientX - dragStartX);
+
+    camera.y =
+        startCamY +
+        (e.clientY - dragStartY);
+
+    updateCamera();
+});
+
+function stopDragging() {
+
+    dragging = false;
+
+    scene.classList.remove("dragging");
 }
+
+scene.addEventListener("pointerup", stopDragging);
+scene.addEventListener("pointercancel", stopDragging);
+
+
+/* =============================================================================
+   STABLE TRACKPAD + MOUSE ZOOM
+===============================================================================
+
+This version properly separates:
+
+    1. Mouse wheel scrolling
+    2. Trackpad pinch/gesture zooming
+
+Why this works better:
+
+Mouse wheels:
+    - large discrete deltas
+    - usually integer values
+    - should zoom in distinct steps
+
+Trackpads:
+    - tiny continuous deltas
+    - often fractional
+    - should feel smooth and damped
+
+The previous implementation incorrectly treated many modern
+mouse wheels as trackpads.
+
+============================================================================= */
+
+scene.addEventListener(
+    "wheel",
+    e => {
+
+        e.preventDefault();
+
+        const rect =
+            scene.getBoundingClientRect();
+
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const oldZoom = camera.zoom;
+
+        /*
+        ===========================================================================
+        INPUT TYPE DETECTION
+        ===========================================================================
+
+        Trackpads usually produce:
+            - small deltas
+            - fractional values
+            - high frequency
+
+        Mouse wheels usually produce:
+            - larger jumps
+            - integer deltas
+            - stepwise behavior
+        */
+
+        const delta = e.deltaY;
+
+        const hasFractionalDelta =
+            delta % 1 !== 0;
+
+        const isTrackpad =
+            Math.abs(delta) < 40 ||
+            hasFractionalDelta;
+
+        let zoomFactor;
+
+        /*
+        ===========================================================================
+        TRACKPAD ZOOM
+        ===========================================================================
+
+        Smooth continuous scaling.
+        */
+
+        if (isTrackpad) {
+
+            const clampedDelta =
+                Math.max(-20, Math.min(20, delta));
+
+            const sensitivity = 0.004;
+
+            zoomFactor =
+                Math.exp(-clampedDelta * sensitivity);
+
+        }
+
+        /*
+        ===========================================================================
+        MOUSE WHEEL ZOOM
+        ===========================================================================
+
+        Distinct controlled zoom steps.
+
+        Much less sensitive than before.
+        */
+
+        else {
+
+            zoomFactor =
+                delta > 0
+                    ? 1
+                    : 1.5;
+        }
+
+        const newZoom =
+            Math.min(
+                CONFIG.maxZoom,
+                Math.max(
+                    CONFIG.minZoom,
+                    oldZoom * zoomFactor
+                )
+            );
+
+        /*
+        ===========================================================================
+        CURSOR-ANCHORED ZOOM
+        ===========================================================================
+
+        Keeps cursor position stable during zoom.
+        */
+
+        const worldX =
+            (mx - camera.x) / oldZoom;
+
+        const worldY =
+            (my - camera.y) / oldZoom;
+
+        camera.zoom = newZoom;
+
+        camera.x =
+            mx - worldX * newZoom;
+
+        camera.y =
+            my - worldY * newZoom;
+
+        updateCamera();
+    },
+    { passive: false }
+);
+
 </script>
+
 </body>
 </html>
