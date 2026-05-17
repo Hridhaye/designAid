@@ -804,12 +804,21 @@ else{const r=sc.getBoundingClientRect();cam.x=r.width/2-xOf(rt)*cam.z;cam.y=40;a
    Wheel : mouse wheel / trackpad scroll → zoom toward cursor
    ──────────────────────────────────────────────── */
 
-/* Active pointer registry — keyed by pointerId */
-const ptrs = new Map(); /* id → {x, y} current position */
+/* ════════════════════════════════════════════════
+   GESTURE SYSTEM  —  pointer events only
+   Pan   : 1 pointer drag  →  release  →  momentum
+   Pinch : 2 pointer pinch+pan, anchored at gesture start
+   Wheel : zoom toward cursor (mouse + trackpad separate paths)
+   ════════════════════════════════════════════════ */
 
-/* Momentum state */
-let vx=0,vy=0,rafId=null;
-const FRICTION=0.82, VEL_MIN=0.4, VEL_MAX=22;
+/* Active pointer registry  id → {x, y} */
+const ptrs = new Map();
+
+/* ── Momentum ── */
+let vx=0, vy=0, rafId=null;
+const FRICTION=0.84;   /* decay per frame — lower = stops sooner          */
+const VEL_MIN=0.35;    /* below this speed, kill momentum                  */
+const VEL_MAX=18;      /* hard cap on launch speed (px/frame at 60 fps)    */
 
 function momentumTick(){
   vx*=FRICTION; vy*=FRICTION;
@@ -818,46 +827,75 @@ function momentumTick(){
   rafId=requestAnimationFrame(momentumTick);
 }
 function stopMomentum(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
-function clampVel(){const spd=Math.hypot(vx,vy);if(spd>VEL_MAX){vx=vx/spd*VEL_MAX;vy=vy/spd*VEL_MAX;}}
-
-/* Velocity smoothing — exponential moving average over recent moves */
-let smoothVx=0,smoothVy=0;
-const VEL_ALPHA=0.3; /* weight of newest sample */
-
-/* Pan state snapshot — taken when exactly 1 pointer is active */
-let panAnchorX=0,panAnchorY=0,camAnchorX=0,camAnchorY=0;
-
-/* Pinch state snapshot — taken ONCE when 2nd pointer goes down */
-let pinchActive=false;
-let pinch0d=0,pinch0z=0,pinch0mx=0,pinch0my=0,pinchCam0x=0,pinchCam0y=0;
-const PINCH_DAMPEN=0.65;
-
-function getPinchMidpoint(){
-  const [a,b]=[...ptrs.values()];
-  return {mx:(a.x+b.x)/2, my:(a.y+b.y)/2, d:Math.hypot(a.x-b.x,a.y-b.y)};
+function launchMomentum(){
+  const spd=Math.hypot(vx,vy);
+  if(spd>VEL_MAX){vx=vx/spd*VEL_MAX;vy=vy/spd*VEL_MAX;}
+  if(Math.abs(vx)>VEL_MIN||Math.abs(vy)>VEL_MIN) rafId=requestAnimationFrame(momentumTick);
+  else{vx=0;vy=0;}
 }
+
+/* ── Velocity: ring buffer of recent per-frame deltas ──
+   We store the last N frame-deltas and average them.
+   This is much more stable than EMA when the pointer
+   slows/stops before release — the buffer naturally
+   zeros out, preventing phantom momentum. */
+const VEL_BUF=6;
+const vBufX=new Float32Array(VEL_BUF), vBufY=new Float32Array(VEL_BUF);
+let vBufIdx=0;
+function resetVelBuf(){vBufX.fill(0);vBufY.fill(0);vBufIdx=0;}
+function pushVelSample(dx,dy){
+  vBufX[vBufIdx%VEL_BUF]=dx;
+  vBufY[vBufIdx%VEL_BUF]=dy;
+  vBufIdx++;
+}
+function readVel(){
+  /* Weighted average: newer samples count more.
+     Weight = index+1, oldest=1, newest=VEL_BUF */
+  let sx=0,sy=0,sw=0;
+  const n=Math.min(vBufIdx,VEL_BUF);
+  for(let i=0;i<n;i++){
+    /* slot order relative to write head */
+    const slot=(vBufIdx-n+i)%VEL_BUF;
+    const w=i+1;
+    sx+=vBufX[slot]*w; sy+=vBufY[slot]*w; sw+=w;
+  }
+  return sw>0?{x:sx/sw,y:sy/sw}:{x:0,y:0};
+}
+
+/* ── Pan state — snapshot at drag start, updated each move ── */
+let panAnchorX=0, panAnchorY=0, camAnchorX=0, camAnchorY=0;
+let lastPanX=0, lastPanY=0; /* previous pointer position, for per-frame delta */
 
 function snapshotPan(){
-  /* Called whenever we settle to exactly 1 pointer — pick it as anchor */
   const [p]=[...ptrs.values()];
-  panAnchorX=p.x; panAnchorY=p.y;
+  panAnchorX=lastPanX=p.x;
+  panAnchorY=lastPanY=p.y;
   camAnchorX=cam.x; camAnchorY=cam.y;
+  resetVelBuf();
 }
 
+/* ── Pinch state — snapshot ONCE when 2nd pointer lands ── */
+let pinchActive=false;
+let pinch0d=0, pinch0z=0, pinch0mx=0, pinch0my=0, pinchCam0x=0, pinchCam0y=0;
+const PINCH_DAMPEN=0.65;
+
+function getPinchMid(){
+  const [a,b]=[...ptrs.values()];
+  return{mx:(a.x+b.x)/2, my:(a.y+b.y)/2, d:Math.hypot(a.x-b.x,a.y-b.y)};
+}
 function snapshotPinch(){
-  /* Called ONCE when 2nd pointer is added */
   pinchActive=true;
-  const {mx,my,d}=getPinchMidpoint();
+  const{mx,my,d}=getPinchMid();
   const r=sc.getBoundingClientRect();
   pinch0d=d; pinch0z=cam.z;
   pinch0mx=mx-r.left; pinch0my=my-r.top;
   pinchCam0x=cam.x; pinchCam0y=cam.y;
 }
 
+/* ── Pointer handlers ── */
 sc.addEventListener("pointerdown",e=>{
-  /* Only track left-button / touch / pen primary */
   if(e.pointerType==="mouse"&&e.button!==0) return;
-  stopMomentum(); smoothVx=0; smoothVy=0;
+  stopMomentum();
   sc.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
@@ -868,47 +906,36 @@ sc.addEventListener("pointerdown",e=>{
   } else if(ptrs.size===2){
     snapshotPinch();
   }
-  /* 3+ pointers: ignore extras */
 });
 
 sc.addEventListener("pointermove",e=>{
   if(!ptrs.has(e.pointerId)) return;
+  const prev=ptrs.get(e.pointerId);
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
   if(ptrs.size===1&&!pinchActive){
-    /* ── Single-finger pan ── */
-    const [p]=[...ptrs.values()];
-    const dx=p.x-panAnchorX, dy=p.y-panAnchorY;
-    /* EMA velocity */
-    smoothVx=smoothVx*(1-VEL_ALPHA)+(p.x-(panAnchorX+(camAnchorX!==cam.x?p.x-panAnchorX:0)))*VEL_ALPHA;
-    /* Simpler: track delta from last frame */
-    const prevX=cam.x-camAnchorX+panAnchorX; /* what we had before */
-    smoothVx=smoothVx*(1-VEL_ALPHA)+(dx-(cam.x-camAnchorX))*VEL_ALPHA;
-    smoothVy=smoothVy*(1-VEL_ALPHA)+(dy-(cam.y-camAnchorY))*VEL_ALPHA;
-    cam.x=camAnchorX+dx; cam.y=camAnchorY+dy;
+    /* ── Pan: position from anchor for accuracy; delta from last frame for velocity ── */
+    const p=ptrs.get(e.pointerId);
+    const fdx=p.x-lastPanX, fdy=p.y-lastPanY; /* true frame-to-frame delta */
+    pushVelSample(fdx,fdy);
+    lastPanX=p.x; lastPanY=p.y;
+    cam.x=camAnchorX+(p.x-panAnchorX);
+    cam.y=camAnchorY+(p.y-panAnchorY);
     applyTransform();
 
   } else if(ptrs.size>=2&&pinchActive){
-    /* ── Two-finger pinch+pan ── */
-    const {mx,my,d}=getPinchMidpoint();
+    /* ── Pinch + pan ── */
+    const{mx,my,d}=getPinchMid();
     const r=sc.getBoundingClientRect();
     const curMx=mx-r.left, curMy=my-r.top;
-
-    /* Zoom anchored to the INITIAL midpoint in world space (no per-frame drift) */
-    const rawRatio=d/pinch0d;
-    const ratio=1+(rawRatio-1)*PINCH_DAMPEN;
+    const ratio=1+(d/pinch0d-1)*PINCH_DAMPEN;
     const nz=Math.min(C.maxZ,Math.max(C.minZ,pinch0z*ratio));
-
-    /* World point under the initial pinch midpoint */
+    /* World point anchored to initial pinch centre — no per-frame drift */
     const wx=(pinch0mx-pinchCam0x)/pinch0z;
     const wy=(pinch0my-pinchCam0y)/pinch0z;
-
-    /* Also allow the midpoint itself to translate (pan during pinch) */
-    const panDx=curMx-pinch0mx, panDy=curMy-pinch0my;
-
     cam.z=nz;
-    cam.x=pinch0mx-wx*nz+panDx;
-    cam.y=pinch0my-wy*nz+panDy;
+    cam.x=pinch0mx-wx*nz+(curMx-pinch0mx);
+    cam.y=pinch0my-wy*nz+(curMy-pinch0my);
     applyTransform();
   }
 });
@@ -921,34 +948,62 @@ function endPointer(e){
   ptrs.delete(e.pointerId);
 
   if(ptrs.size===0){
-    /* All pointers gone — launch momentum if panning */
     sc.classList.remove("dragging");
     pinchActive=false;
-    vx=smoothVx; vy=smoothVy; clampVel();
-    if(Math.abs(vx)>VEL_MIN||Math.abs(vy)>VEL_MIN) rafId=requestAnimationFrame(momentumTick);
-    else{vx=0;vy=0;}
-    smoothVx=0; smoothVy=0;
-
+    const vel=readVel();
+    vx=vel.x; vy=vel.y;
+    launchMomentum();
+    resetVelBuf();
   } else if(ptrs.size===1){
-    /* One finger left after pinch — restart pan cleanly from current position */
+    /* Finger lifted out of pinch — restart pan from current state */
     pinchActive=false;
-    smoothVx=0; smoothVy=0;
+    resetVelBuf();
     snapshotPan();
   }
-  /* If 2+ remain, the pinch snapshot is already set — do nothing */
 }
 
-/* ── Mouse wheel zoom ── */
+/* ── Mouse wheel zoom ──
+   Strategy: normalise all deltas into a single "zoom intensity"
+   value in [-1, 1] range before computing the zoom factor.
+   This prevents the wide variance between mice/OS/browsers.
+
+   Mouse clicks : deltaMode LINE (1) or large PIXEL (≥100)
+                  each notch should zoom ~7% — gentle, not jumpy
+   Trackpad     : deltaMode PIXEL with small fractional values
+                  treat as continuous, tiny steps per event        */
+const WHEEL_MOUSE_STEP=0.065; /* fraction to zoom per mouse notch           */
+const WHEEL_TP_SCALE=0.003;   /* pixels → zoom exponent for trackpad        */
+const WHEEL_TP_MAX=0.12;      /* max zoom per trackpad event (smoothing cap) */
+
 sc.addEventListener("wheel",e=>{
   e.preventDefault();
   stopMomentum();
   const r=sc.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+
+  let zf; /* final zoom factor to multiply cam.z by */
+
+  if(e.deltaMode===1){
+    /* LINE mode — one notch = 1 line, sign = direction */
+    zf = e.deltaY>0 ? 1-WHEEL_MOUSE_STEP : 1+WHEEL_MOUSE_STEP;
+  } else {
+    /* PIXEL mode — could be mouse (large integer) or trackpad (small/fractional) */
+    const abs=Math.abs(e.deltaY);
+    const isTrackpad = abs<60 || e.deltaY%1!==0;
+    if(isTrackpad){
+      /* Continuous trackpad: exponential scaling, capped per-event */
+      const t=Math.max(-WHEEL_TP_MAX,Math.min(WHEEL_TP_MAX,-e.deltaY*WHEEL_TP_SCALE));
+      zf=Math.exp(t);
+    } else {
+      /* Mouse in pixel mode — normalise to ±1 notch equivalent regardless of OS delta */
+      zf = e.deltaY>0 ? 1-WHEEL_MOUSE_STEP : 1+WHEEL_MOUSE_STEP;
+    }
+  }
+
   const oz=cam.z;
-  const isTrackpad=Math.abs(e.deltaY)<40||e.deltaMode===0&&e.deltaY%1!==0;
-  const zf=isTrackpad?Math.exp(-Math.max(-20,Math.min(20,e.deltaY))*0.002):(e.deltaY>0?0.93:1.075);
   const nz=Math.min(C.maxZ,Math.max(C.minZ,oz*zf));
   const wx=(mx-cam.x)/oz, wy=(my-cam.y)/oz;
-  cam.z=nz; cam.x=mx-wx*nz; cam.y=my-wy*nz; applyTransform();
+  cam.z=nz; cam.x=mx-wx*nz; cam.y=my-wy*nz;
+  applyTransform();
 },{passive:false});
 
 <\/script></body></html>`;
