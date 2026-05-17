@@ -101,19 +101,8 @@ html, body {
     flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 60px;
     -webkit-overflow-scrolling: touch;
 }
-.panel.bottom-collapsed .tree-scroll {
-    padding-bottom: 6px;
-}
 .tree-scroll::-webkit-scrollbar { width: 3px; }
 .tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-.panel-bottom {
-    flex-shrink: 0; transition: max-height 0.22s ease, opacity 0.22s ease;
-    overflow: hidden; max-height: 9999px; opacity: 1;
-}
-.panel-bottom.collapsed {
-    max-height: 0; opacity: 0;
-}
 
 .tree-row {
     display: flex; align-items: center;
@@ -330,11 +319,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     .row-btn { width: 42px; height: 42px; font-size: 13px; }
     .row-btn.reorder { width: 46px; }
     .row-actions { gap: 4px; padding-left: 18px; }
-    .tree-row { padding-right: 10px; min-height: 40px; }
-    .vline, .connector { height: 40px; }
-    .connector::before { height: 20px; }
-    .connector::after { top: 20px; }
-    .connector.not-last::before { height: 40px; }
+    .tree-row { padding-right: 10px; }
     .node-label { font-size: 15px; line-height: 40px; }
     .node-input { font-size: 14px; height: 32px; padding: 3px 6px; }
     .toggle { width: 22px; height: 22px; font-size: 12px; margin-right: 8px; }
@@ -445,19 +430,17 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         <div class="panel" id="panel">
             <div class="panel-head">
                 <span class="panel-head-title">Members</span>
-                <button class="panel-head-btn" id="btnBottom">Hide details</button>
                 <button class="panel-head-btn" id="btnExp">Expand</button>
                 <button class="panel-head-btn" id="btnCol">Collapse</button>
             </div>
             <div class="tree-scroll" id="treeRoot"></div>
-            <div class="panel-bottom" id="panelBottom">
-                <div class="legend" id="legend"></div>
-                <div class="panel-foot">
-                    <span class="status" id="status"></span>
-                    <button class="btn-export" id="btnCopy">Copy array</button>
-                    <button class="btn-export" id="btnPrintText">Print text</button>
-                </div>
-                <div class="import-section" id="importSection">
+            <div class="legend" id="legend"></div>
+            <div class="panel-foot">
+                <span class="status" id="status"></span>
+                <button class="btn-export" id="btnCopy">Copy array</button>
+                <button class="btn-export" id="btnPrintText">Print text</button>
+            </div>
+            <div class="import-section" id="importSection">
                 <button class="import-toggle" id="importToggle">
                     <span class="import-toggle-arrow" id="importArrow">▶</span>
                     <span>Paste import</span>
@@ -490,7 +473,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
 
         <div class="preview">
             <iframe id="preview" title="Chart Preview"></iframe>
@@ -944,23 +927,13 @@ document.getElementById('btnCol').addEventListener('click', () => { pushUndoStat
 
 /* ── Panel toggle ── */
 const panelEl = document.getElementById('panel');
-const panelBottomEl = document.getElementById('panelBottom');
-const btnToggleBottom = document.getElementById('btnBottom');
 const btnToggle = document.getElementById('btnToggle');
 let panelOpen = true;
-let bottomOpen = true;
 
 btnToggle.addEventListener('click', () => {
     panelOpen = !panelOpen;
     panelEl.classList.toggle('collapsed', !panelOpen);
     btnToggle.style.color = panelOpen ? '' : 'var(--accent)';
-});
-
-btnToggleBottom.addEventListener('click', () => {
-    bottomOpen = !bottomOpen;
-    panelBottomEl.classList.toggle('collapsed', !bottomOpen);
-    panelEl.classList.toggle('bottom-collapsed', !bottomOpen);
-    btnToggleBottom.textContent = bottomOpen ? 'Hide details' : 'Show details';
 });
 
 /* ── Spacing control ── */
