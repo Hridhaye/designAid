@@ -1017,7 +1017,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3fb;fon
 svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 #nodesLayer{position:absolute;left:0;top:0;z-index:2}
 .node-wrap{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
-.node{position:relative;width:${Math.round(190 * spacingMult)}px;min-height:${Math.round(100 * spacingMult)}px;padding:12px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${Math.round(180 * spacingMult) / 10}px;font-weight:700;line-height:1.15;color:white;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);contain:layout style paint;cursor:pointer}
+.node{position:relative;width:${Math.round(190 * spacingMult)}px;min-height:${Math.round(100 * spacingMult)}px;padding:12px 10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${Math.round(180 * spacingMult) / 10}px;font-weight:800;line-height:1.15;border-radius:4px;border:1px solid rgba(0,0,0,.28);box-shadow:0 1px 2px rgba(0,0,0,.08);text-shadow:0 1px 2px rgba(0,0,0,.18);contain:layout style paint;cursor:pointer}
 .node.selected{outline:3px solid rgba(212,168,76,.9);outline-offset:4px;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 8px 24px rgba(0,0,0,.22)}
 .node.drag-source{outline:3px solid rgba(244,208,120,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.38),0 12px 26px rgba(0,0,0,.3)}
 .node.drop-target{outline:3px solid rgba(34,197,94,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.42),0 12px 26px rgba(0,0,0,.28)}
@@ -1088,6 +1088,16 @@ sv.setAttribute("width",cw);sv.setAttribute("height",ch2);sv.setAttribute("viewB
 const xOf=n=>C.pX+ps.get(n).x*C.xG;
 const yOf=n=>C.pY+ps.get(n).y*C.yG;
 const sc2=n=>n==="Founding Father"?"Founding":n.split(" ")[0];
+const NODE_COLOR_MAP = ${JSON.stringify(colorMap)};
+function textColorFor(bg){
+  if(typeof bg!=='string') return '#1e1e1e';
+  const hex = bg.replace('#','');
+  const r = parseInt(hex.slice(0,2),16);
+  const g = parseInt(hex.slice(2,4),16);
+  const b = parseInt(hex.slice(4,6),16);
+  const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+  return lum > 160 ? '#111111' : '#fbf6eb';
+}
 function post(msg){window.parent.postMessage(msg,"*");}
 function act(id,action,inline=false){post({type:"node-action",id,action,inline});}
 function canDropOn(sourceId,targetId){
@@ -1245,6 +1255,7 @@ function rN(){
       const d=document.createElement("div");
       d.className="node "+sc2(node.name);
       d.textContent=node.name;
+      d.style.color = textColorFor(NODE_COLOR_MAP[sc2(node.name)] || '#ffffff');
       d.addEventListener("pointerdown",e=>beginHoldReparent(e,id));
       d.addEventListener("click",e=>{
         e.stopPropagation();
