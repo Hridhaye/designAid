@@ -1021,19 +1021,19 @@ svg{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1}
 .node.selected{outline:3px solid rgba(212,168,76,.9);outline-offset:4px;box-shadow:0 0 0 1px rgba(255,255,255,.28),0 8px 24px rgba(0,0,0,.22)}
 .node.drag-source{outline:3px solid rgba(244,208,120,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.38),0 12px 26px rgba(0,0,0,.3)}
 .node.drop-target{outline:3px solid rgba(34,197,94,.95);outline-offset:5px;box-shadow:0 0 0 2px rgba(255,255,255,.42),0 12px 26px rgba(0,0,0,.28)}
-.node-actions{display:none;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;background:rgba(19,17,16,.92);box-shadow:0 10px 24px rgba(0,0,0,.22)}
+.node-actions{display:none;align-items:center;gap:${Math.round(6 * spacingMult)}px;padding:${Math.round(6 * spacingMult)}px ${Math.round(8 * spacingMult)}px;border-radius:999px;background:rgba(19,17,16,.92);box-shadow:0 10px 24px rgba(0,0,0,.22)}
 .node-wrap.selected .node-actions{display:flex}
-.node-btn{width:28px;height:28px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#f3ead9;font:700 13px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.node-btn{width:${Math.round(28 * spacingMult)}px;height:${Math.round(28 * spacingMult)}px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#f3ead9;font:700 ${Math.max(13, Math.round(13 * spacingMult))}px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .node-btn:hover,.node-btn:active{background:rgba(212,168,76,.22);color:#f6d183}
 .node-btn.disabled{opacity:.38;pointer-events:none}
 .node-input{width:100%;min-height:38px;padding:8px 10px;border:2px solid rgba(212,168,76,.92);border-radius:4px;background:#fffaf1;color:#2b2117;font:700 14px/1.15 Arial,sans-serif;text-align:center;outline:none;box-shadow:0 8px 24px rgba(0,0,0,.16)}
 @media (pointer: coarse){
-.node-actions{gap:8px;padding:8px 10px}
-.node-btn{width:36px;height:36px;font-size:15px}
+.node-actions{gap:${Math.round(8 * spacingMult)}px;padding:${Math.round(8 * spacingMult)}px ${Math.round(10 * spacingMult)}px}
+.node-btn{width:${Math.round(36 * spacingMult)}px;height:${Math.round(36 * spacingMult)}px;font-size:${Math.max(15, Math.round(15 * spacingMult))}px}
 }
 @media screen and (max-width: 1024px){
-.node-actions{gap:9px;padding:9px 11px}
-.node-btn{width:40px;height:40px;font-size:16px}
+.node-actions{gap:${Math.round(9 * spacingMult)}px;padding:${Math.round(9 * spacingMult)}px ${Math.round(11 * spacingMult)}px}
+.node-btn{width:${Math.round(40 * spacingMult)}px;height:${Math.round(40 * spacingMult)}px;font-size:${Math.max(16, Math.round(16 * spacingMult))}px}
 }
 ${colorCSS}
 </style></head><body>
