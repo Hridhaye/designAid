@@ -51,7 +51,7 @@ body {
     overflow: hidden;
 
     cursor: grab;
-    touch-action: none;
+    touch-action: pinch-zoom;
 }
 
 #scene.dragging {
@@ -942,6 +942,214 @@ scene.addEventListener(
             my - worldY * newZoom;
 
         updateCamera();
+    },
+    { passive: false }
+);
+
+   /* =============================================================================
+   TOUCH PAN + PINCH ZOOM
+===============================================================================
+
+Simple mobile/tablet controls:
+
+    - One finger  = pan
+    - Two fingers = pinch zoom
+
+Uses the SAME camera architecture already used by:
+    - mouse drag
+    - wheel zoom
+
+So the chart geometry remains perfectly stable.
+
+============================================================================= */
+
+let pinchStartDistance = 0;
+let pinchStartZoom = 1;
+
+let pinchWorldX = 0;
+let pinchWorldY = 0;
+
+function distanceBetweenTouches(t1, t2) {
+
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+
+    return Math.hypot(dx, dy);
+}
+
+scene.addEventListener(
+    "touchstart",
+    e => {
+
+        /*
+            Prevent browser page zoom/scroll.
+        */
+
+        e.preventDefault();
+
+        /*
+        ===========================================================================
+        SINGLE FINGER PAN
+        ===========================================================================
+
+        Reuse existing drag system.
+        */
+
+        if (e.touches.length === 1) {
+
+            const touch = e.touches[0];
+
+            dragging = true;
+
+            dragStartX = touch.clientX;
+            dragStartY = touch.clientY;
+
+            startCamX = camera.x;
+            startCamY = camera.y;
+        }
+
+        /*
+        ===========================================================================
+        TWO FINGER PINCH
+        ===========================================================================
+
+        Store:
+            - initial pinch distance
+            - initial zoom
+            - world point under pinch center
+        */
+
+        else if (e.touches.length === 2) {
+
+            dragging = false;
+
+            const [t1, t2] = e.touches;
+
+            pinchStartDistance =
+                distanceBetweenTouches(t1, t2);
+
+            pinchStartZoom = camera.zoom;
+
+            const rect =
+                scene.getBoundingClientRect();
+
+            const centerX =
+                (t1.clientX + t2.clientX) / 2 -
+                rect.left;
+
+            const centerY =
+                (t1.clientY + t2.clientY) / 2 -
+                rect.top;
+
+            pinchWorldX =
+                (centerX - camera.x) / camera.zoom;
+
+            pinchWorldY =
+                (centerY - camera.y) / camera.zoom;
+        }
+    },
+    { passive: false }
+);
+
+scene.addEventListener(
+    "touchmove",
+    e => {
+
+        e.preventDefault();
+
+        /*
+        ===========================================================================
+        ONE FINGER PAN
+        ===========================================================================
+
+        */
+
+        if (e.touches.length === 1 && dragging) {
+
+            const touch = e.touches[0];
+
+            camera.x =
+                startCamX +
+                (touch.clientX - dragStartX);
+
+            camera.y =
+                startCamY +
+                (touch.clientY - dragStartY);
+
+            updateCamera();
+        }
+
+        /*
+        ===========================================================================
+        TWO FINGER PINCH ZOOM
+        ===========================================================================
+
+        */
+
+        else if (e.touches.length === 2) {
+
+            const [t1, t2] = e.touches;
+
+            const currentDistance =
+                distanceBetweenTouches(t1, t2);
+
+            const zoomFactor =
+                currentDistance / pinchStartDistance;
+
+            const newZoom =
+                Math.min(
+                    CONFIG.maxZoom,
+                    Math.max(
+                        CONFIG.minZoom,
+                        pinchStartZoom * zoomFactor
+                    )
+                );
+
+            const rect =
+                scene.getBoundingClientRect();
+
+            const centerX =
+                (t1.clientX + t2.clientX) / 2 -
+                rect.left;
+
+            const centerY =
+                (t1.clientY + t2.clientY) / 2 -
+                rect.top;
+
+            camera.zoom = newZoom;
+
+            /*
+                Keep pinch center anchored.
+            */
+
+            camera.x =
+                centerX -
+                pinchWorldX * newZoom;
+
+            camera.y =
+                centerY -
+                pinchWorldY * newZoom;
+
+            updateCamera();
+        }
+    },
+    { passive: false }
+);
+
+scene.addEventListener(
+    "touchend",
+    () => {
+
+        dragging = false;
+    },
+    { passive: false }
+);
+
+scene.addEventListener(
+    "touchcancel",
+    () => {
+
+        dragging = false;
     },
     { passive: false }
 );
